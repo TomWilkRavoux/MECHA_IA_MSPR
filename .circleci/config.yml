@@ -1,0 +1,50 @@
+version: 2.1
+
+orbs:
+  node: circleci/node@5.2.0
+
+jobs:
+  block-merge-rules:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - run:
+          name: Verifier les regles de merge
+          command: |
+            PR_DATA=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+              "https://api.github.com/repos/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME/pulls?head=$CIRCLE_PROJECT_USERNAME:$CIRCLE_BRANCH&state=open")
+            SOURCE=$(echo "$PR_DATA" | python3 -c "import sys,json;d=json.load(sys.stdin);print(d[0]['head']['ref'] if d else '')")
+            TARGET=$(echo "$PR_DATA" | python3 -c "import sys,json;d=json.load(sys.stdin);print(d[0]['base']['ref'] if d else '')")
+
+            if [ -z "$TARGET" ]; then
+              echo "Pas de PR ouverte, rien a verifier"; exit 0
+            fi
+            echo "PR: $SOURCE -> $TARGET"
+
+            # Vers main : seulement release/* et hotfix/*
+            if [ "$TARGET" = "main" ] && ! echo "$SOURCE" | grep -qE '^(release|hotfix)/'; then
+              echo "Seules release/* et hotfix/* peuvent fusionner dans main"; exit 1
+            fi
+            # Vers integration : seulement develop et hotfix/*
+            if [ "$TARGET" = "integration" ] && [ "$SOURCE" != "develop" ] && ! echo "$SOURCE" | grep -qE '^hotfix/'; then
+              echo "Seules develop et hotfix/* peuvent fusionner dans integration"; exit 1
+            fi
+            echo "OK"
+
+  scan-secrets:
+    docker:
+      - image: cimg/node:22.12
+    steps:
+      - checkout
+      - run:
+          name: gitleaks
+          command: |
+            curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.18.4/gitleaks_8.18.4_linux_x64.tar.gz \
+              | tar -xz gitleaks
+            ./gitleaks detect --source . --no-banner --redact
+
+workflows:
+  ci:
+    jobs:
+      - block-merge-rules
+      - scan-secrets
