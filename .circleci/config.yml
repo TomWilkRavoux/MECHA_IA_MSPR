@@ -4,7 +4,7 @@ orbs:
   node: circleci/node@5.2.0
 
 jobs:
-  block-dev-to-main:
+  block-merge-rules:
     docker:
       - image: cimg/base:stable
     steps:
