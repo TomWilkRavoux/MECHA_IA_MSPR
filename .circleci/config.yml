@@ -4,31 +4,48 @@ orbs:
   node: circleci/node@5.2.0
 
 jobs:
-  block-merge-rules:
+  block-dev-to-main:
     docker:
       - image: cimg/base:stable
     steps:
       - run:
-          name: Verifier les regles de merge
+          name: Block Dev to Main
           command: |
-            PR_DATA=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            PR_NUMBER=$(echo $CIRCLE_PULL_REQUEST | grep -o '[0-9]*$')
+
+            echo "PR Number: $PR_NUMBER"
+
+            if [ -z "$PR_NUMBER" ]; then
+              echo "Pas de PR détectée, skip"
+              exit 0
+            fi
+
+            PR_DATA=$(curl -s \
+              -H "Authorization: token $GITHUB_TOKEN" \
               "https://api.github.com/repos/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME/pulls?head=$CIRCLE_PROJECT_USERNAME:$CIRCLE_BRANCH&state=open")
-            SOURCE=$(echo "$PR_DATA" | python3 -c "import sys,json;d=json.load(sys.stdin);print(d[0]['head']['ref'] if d else '')")
-            TARGET=$(echo "$PR_DATA" | python3 -c "import sys,json;d=json.load(sys.stdin);print(d[0]['base']['ref'] if d else '')")
 
-            if [ -z "$TARGET" ]; then
-              echo "Pas de PR ouverte, rien a verifier"; exit 0
-            fi
-            echo "PR: $SOURCE -> $TARGET"
+            SOURCE_BRANCH=$(echo "$PR_DATA" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d[0]['head']['ref']) if d else print('')")
+            TARGET_BRANCH=$(echo "$PR_DATA" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d[0]['base']['ref']) if d else print('')")
 
-            # Vers main : seulement release/* et hotfix/*
-            if [ "$TARGET" = "main" ] && ! echo "$SOURCE" | grep -qE '^(release|hotfix)/'; then
-              echo "Seules release/* et hotfix/* peuvent fusionner dans main"; exit 1
+            echo "Source branch: $SOURCE_BRANCH"
+            echo "Target branch: $TARGET_BRANCH"
+
+            # Règles vers main : seulement release/* et hotfix/*
+            if [ "$TARGET_BRANCH" = "main" ]; then
+              if ! echo "$SOURCE_BRANCH" | grep -qE '^(release|hotfix)/'; then
+                echo "Seules les branches release/* et hotfix/* peuvent etre merge dans main !"
+                exit 1
+              fi
             fi
-            # Vers integration : seulement develop et hotfix/*
-            if [ "$TARGET" = "integration" ] && [ "$SOURCE" != "develop" ] && ! echo "$SOURCE" | grep -qE '^hotfix/'; then
-              echo "Seules develop et hotfix/* peuvent fusionner dans integration"; exit 1
+
+            # Règles vers integration : seulement develop et hotfix/*
+            if [ "$TARGET_BRANCH" = "integration" ]; then
+              if [ "$SOURCE_BRANCH" != "develop" ] && ! echo "$SOURCE_BRANCH" | grep -qE '^hotfix/'; then
+                echo "Seules develop et hotfix/* peuvent etre merge dans integration !"
+                exit 1
+              fi
             fi
+
             echo "OK"
 
   scan-secrets:
