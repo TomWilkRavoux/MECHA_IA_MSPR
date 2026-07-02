@@ -7,3 +7,9 @@ assets/
 
 #Model
 *joblib
+
+Samuel/.ipynb_checkpoints/
+Samuel/.ipynb_checkpoints/*
+
+Samuel/Data/CMaps/
+Samuel/Data/CMaps/*
