@@ -1,9 +1,13 @@
 .env
 .venv/
 __marimo__/
+__pycache__/
+.claude/
 
 reports/
 assets/
+*.pdf
 
 #Model
 *joblib
+*.pt

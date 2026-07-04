@@ -6,9 +6,10 @@ app = marimo.App(width="medium")
 
 @app.cell
 def _():
+    from pathlib import Path
+
     import marimo as mo
     import polars as pl
-    from pathlib import Path
 
     return Path, mo, pl
 
@@ -34,34 +35,56 @@ def _(Path, mo, pl):
     TEST_FILES = {
         "FD001": "test_FD001_clean.csv",
         "FD002": "test_FD002_clean.csv",
-        "FD003": "test_FD003_clean.csv", 
-        "FD004": "test_FD004_clean.csv", 
+        "FD003": "test_FD003_clean.csv",
+        "FD004": "test_FD004_clean.csv",
     }
 
     RUL_TRUE = {
         "FD001": "rul_true_FD001_clean.csv",
         "FD002": "rul_true_FD002.csv",
-        "FD003": "rul_true_FD003_clean.csv", 
-        "FD004": "rul_true_FD004_clean.csv", 
+        "FD003": "rul_true_FD003_clean.csv",
+        "FD004": "rul_true_FD004_clean.csv",
     }
 
     def add_ids(df: pl.DataFrame, name: str) -> pl.DataFrame:
         usine = "Usine A" if name in ("FD001", "FD002") else "Usine B"
-        ligne = "Ligne 1 (dédiée)" if name in ("FD001", "FD003") else "Ligne 2 (polyvalente)"
-        return df.with_columns([
-            pl.lit(name).alias("subset"),
-            pl.lit(usine).alias("usine"),
-            pl.lit(ligne).alias("ligne_production"),
-            (pl.lit(name) + "_u" + pl.col("unit").cast(pl.Utf8).str.zfill(3)).alias("machine_id"),
-        ])
+        ligne = (
+            "Ligne 1 (dédiée)"
+            if name in ("FD001", "FD003")
+            else "Ligne 2 (polyvalente)"
+        )
+        return df.with_columns(
+            [
+                pl.lit(name).alias("subset"),
+                pl.lit(usine).alias("usine"),
+                pl.lit(ligne).alias("ligne_production"),
+                (pl.lit(name) + "_u" + pl.col("unit").cast(pl.Utf8).str.zfill(3)).alias(
+                    "machine_id"
+                ),
+            ]
+        )
 
     def reorder(df: pl.DataFrame) -> pl.DataFrame:
-        front = [c for c in ["machine_id", "subset", "usine", "ligne_production", "unit", "cycle"] if c in df.columns]
+        front = [
+            c
+            for c in [
+                "machine_id",
+                "subset",
+                "usine",
+                "ligne_production",
+                "unit",
+                "cycle",
+            ]
+            if c in df.columns
+        ]
         return df.select(front + [c for c in df.columns if c not in front])
 
     def build(files: dict) -> pl.DataFrame:
         return pl.concat(
-            [reorder(add_ids(pl.read_csv(DATA_DIR / f), name)) for name, f in files.items()],
+            [
+                reorder(add_ids(pl.read_csv(DATA_DIR / f), name))
+                for name, f in files.items()
+            ],
             how="vertical",
         )
 
@@ -77,6 +100,17 @@ def _(CLF_FILES, build):
 
 
 @app.cell
+def _(df_clf, pl):
+    mapping_check = (
+        df_clf.group_by(["usine", "ligne_production", "subset"])
+        .agg(machines=pl.col("machine_id").n_unique())
+        .sort(["usine", "ligne_production"])
+    )
+    mapping_check
+    return
+
+
+@app.cell
 def _(RUL_FILES, build):
     df_rul = build(RUL_FILES)
     df_rul
@@ -86,18 +120,23 @@ def _(RUL_FILES, build):
 @app.cell
 def _(df_clf, df_rul, mo, pl):
     controle = (
-        df_clf.group_by(["usine", "ligne_production"]).agg(
+        df_clf.group_by(["usine", "ligne_production"])
+        .agg(
             machines=pl.col("machine_id").n_unique(),
             lignes=pl.len(),
             taux_at_risk=(100 * pl.col("at_risk").mean()).round(1),
         )
         .sort(["usine", "ligne_production"])
     )
-    mo.vstack([
-        mo.md(f"**Classification** : {df_clf.height} lignes · {df_clf['machine_id'].n_unique()} machines · "
-              f"RUL {df_rul['RUL'].min()}→{df_rul['RUL'].max()}"),
-        controle,
-    ])
+    mo.vstack(
+        [
+            mo.md(
+                f"**Classification** : {df_clf.height} lignes · {df_clf['machine_id'].n_unique()} machines · "
+                f"RUL {df_rul['RUL'].min()}→{df_rul['RUL'].max()}"
+            ),
+            controle,
+        ]
+    )
     return
 
 
