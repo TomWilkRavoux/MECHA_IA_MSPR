@@ -23,14 +23,12 @@ def _():
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
-        # Évaluation — XGBoost (régression `RUL`)
+    mo.md(r"""
+    # Évaluation — XGBoost (régression `RUL`)
 
-        Modèle rechargé : `models/xgb_regressor.joblib` (entraîné dans
-        `02_gradient_boosting_baseline.py`, early stopping sur la validation).
-        """
-    )
+    Modèle rechargé : `models/xgb_regressor.joblib` (entraîné dans
+    `02_gradient_boosting_baseline.py`, early stopping sur la validation).
+    """)
     return
 
 
@@ -74,16 +72,14 @@ def _(metrics, model, prep):
 
 @app.cell
 def _(m, mo):
-    mo.md(
-        f"""
-        ## Conclusion
-        - **MAE = {m['MAE']:.1f}**, **RMSE = {m['RMSE']:.1f}**, **R² = {m['R2']:.2f}**,
-          **Score NASA = {m['NASA']:.0f}**.
-        - Le boosting réduit nettement l'erreur par rapport à la baseline linéaire ;
-          performances proches de la Random Forest, souvent avec un meilleur score NASA
-          (moins de retards de prédiction).
-        """
-    )
+    mo.md(f"""
+    ## Conclusion
+    - **MAE = {m['MAE']:.1f}**, **RMSE = {m['RMSE']:.1f}**, **R² = {m['R2']:.2f}**,
+      **Score NASA = {m['NASA']:.0f}**.
+    - Le boosting réduit nettement l'erreur par rapport à la baseline linéaire ;
+      performances proches de la Random Forest, souvent avec un meilleur score NASA
+      (moins de retards de prédiction).
+    """)
     return
 
 

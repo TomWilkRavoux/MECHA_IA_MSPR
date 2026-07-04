@@ -25,16 +25,14 @@ def _():
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
-        # Évaluation — LSTM (classification `at_risk`)
+    mo.md(r"""
+    # Évaluation — LSTM (classification `at_risk`)
 
-        Modèle rechargé : `models/lstm_classifier.pt` (PyTorch, entraîné sur GPU dans
-        `03_lstm.py`). Évaluation sur une **fenêtre glissante** des derniers `SEQ_LEN`
-        cycles de chaque machine test (via `make_test_windows`), label `at_risk` dérivé
-        de la vérité terrain RUL.
-        """
-    )
+    Modèle rechargé : `models/lstm_classifier.pt` (PyTorch, entraîné sur GPU dans
+    `03_lstm.py`). Évaluation sur une **fenêtre glissante** des derniers `SEQ_LEN`
+    cycles de chaque machine test (via `make_test_windows`), label `at_risk` dérivé
+    de la vérité terrain RUL.
+    """)
     return
 
 
@@ -85,16 +83,14 @@ def _(metrics, proba, y):
 
 @app.cell
 def _(m, mo):
-    mo.md(
-        f"""
-        ## Conclusion
-        - **Recall = {m['recall']:.2f}**, **Precision = {m['precision']:.2f}**,
-          **F1 = {m['f1']:.2f}**, **ROC-AUC = {m.get('roc_auc', float('nan')):.2f}**.
-        - Le LSTM exploite la **dynamique temporelle** (dérive des capteurs sur la
-          fenêtre) que les modèles tabulaires ignorent : gain typique sur le recall
-          (détection plus fine des machines en fin de vie).
-        """
-    )
+    mo.md(f"""
+    ## Conclusion
+    - **Recall = {m['recall']:.2f}**, **Precision = {m['precision']:.2f}**,
+      **F1 = {m['f1']:.2f}**, **ROC-AUC = {m.get('roc_auc', float('nan')):.2f}**.
+    - Le LSTM exploite la **dynamique temporelle** (dérive des capteurs sur la
+      fenêtre) que les modèles tabulaires ignorent : gain typique sur le recall
+      (détection plus fine des machines en fin de vie).
+    """)
     return
 
 

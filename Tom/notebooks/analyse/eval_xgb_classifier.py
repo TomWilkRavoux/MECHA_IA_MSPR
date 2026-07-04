@@ -23,15 +23,13 @@ def _():
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
-        # Évaluation — XGBoost (classification `at_risk`)
+    mo.md(r"""
+    # Évaluation — XGBoost (classification `at_risk`)
 
-        Modèle rechargé : `models/xgb_classifier.joblib` (entraîné dans
-        `02_gradient_boosting_baseline.py`). Gradient Boosting d'arbres avec
-        `scale_pos_weight` pour compenser le déséquilibre de classes.
-        """
-    )
+    Modèle rechargé : `models/xgb_classifier.joblib` (entraîné dans
+    `02_gradient_boosting_baseline.py`). Gradient Boosting d'arbres avec
+    `scale_pos_weight` pour compenser le déséquilibre de classes.
+    """)
     return
 
 
@@ -82,15 +80,13 @@ def _(metrics, model, prep):
 
 @app.cell
 def _(m, mo):
-    mo.md(
-        f"""
-        ## Conclusion
-        - **Recall = {m['recall']:.2f}**, **Precision = {m['precision']:.2f}**,
-          **F1 = {m['f1']:.2f}**, **ROC-AUC = {m.get('roc_auc', float('nan')):.2f}**.
-        - XGBoost pousse en général le **recall** (moins de pannes manquées) grâce au
-          boosting séquentiel. À comparer à la Random Forest et au LSTM.
-        """
-    )
+    mo.md(f"""
+    ## Conclusion
+    - **Recall = {m['recall']:.2f}**, **Precision = {m['precision']:.2f}**,
+      **F1 = {m['f1']:.2f}**, **ROC-AUC = {m.get('roc_auc', float('nan')):.2f}**.
+    - XGBoost pousse en général le **recall** (moins de pannes manquées) grâce au
+      boosting séquentiel. À comparer à la Random Forest et au LSTM.
+    """)
     return
 
 

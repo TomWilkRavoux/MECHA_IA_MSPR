@@ -23,15 +23,13 @@ def _():
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
-        # Évaluation — Random Forest (régression `RUL`)
+    mo.md(r"""
+    # Évaluation — Random Forest (régression `RUL`)
 
-        Modèle rechargé : `models/rf_regressor.joblib` (entraîné dans `01_random_forest.py`).
-        Prédiction du RUL sur le dernier cycle de chaque machine test, comparée à la
-        vérité terrain `RUL_true`.
-        """
-    )
+    Modèle rechargé : `models/rf_regressor.joblib` (entraîné dans `01_random_forest.py`).
+    Prédiction du RUL sur le dernier cycle de chaque machine test, comparée à la
+    vérité terrain `RUL_true`.
+    """)
     return
 
 
@@ -75,16 +73,14 @@ def _(metrics, model, prep):
 
 @app.cell
 def _(m, mo):
-    mo.md(
-        f"""
-        ## Conclusion
-        - **MAE = {m['MAE']:.1f} cycles** : erreur moyenne lisible par la maintenance.
-        - **RMSE = {m['RMSE']:.1f}** : pénalise les grosses erreurs.
-        - **R² = {m['R2']:.2f}** : part de variance expliquée.
-        - **Score NASA = {m['NASA']:.0f}** (plus bas = mieux) : pénalise les prédictions
-          **en retard** (RUL surestimé = panne détectée trop tard).
-        """
-    )
+    mo.md(f"""
+    ## Conclusion
+    - **MAE = {m['MAE']:.1f} cycles** : erreur moyenne lisible par la maintenance.
+    - **RMSE = {m['RMSE']:.1f}** : pénalise les grosses erreurs.
+    - **R² = {m['R2']:.2f}** : part de variance expliquée.
+    - **Score NASA = {m['NASA']:.0f}** (plus bas = mieux) : pénalise les prédictions
+      **en retard** (RUL surestimé = panne détectée trop tard).
+    """)
     return
 
 

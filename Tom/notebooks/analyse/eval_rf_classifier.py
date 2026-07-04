@@ -23,15 +23,13 @@ def _():
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
-        # Évaluation — Random Forest (classification `at_risk`)
+    mo.md(r"""
+    # Évaluation — Random Forest (classification `at_risk`)
 
-        Modèle rechargé : `models/rf_classifier.joblib` (entraîné dans `01_random_forest.py`).
-        Évaluation sur le jeu de test officiel : dernier cycle observé de chaque machine,
-        label `at_risk` dérivé de la vérité terrain RUL (seuil 30).
-        """
-    )
+    Modèle rechargé : `models/rf_classifier.joblib` (entraîné dans `01_random_forest.py`).
+    Évaluation sur le jeu de test officiel : dernier cycle observé de chaque machine,
+    label `at_risk` dérivé de la vérité terrain RUL (seuil 30).
+    """)
     return
 
 
@@ -82,16 +80,14 @@ def _(metrics, model, prep):
 
 @app.cell
 def _(m, mo):
-    mo.md(
-        f"""
-        ## Conclusion
-        - **Recall = {m['recall']:.2f}** : détection des machines réellement à risque —
-          métrique critique (un faux négatif = panne manquée).
-        - **Precision = {m['precision']:.2f}** : fiabilité des alertes émises.
-        - **F1 = {m['f1']:.2f}**, **ROC-AUC = {m.get('roc_auc', float('nan')):.2f}** (séparabilité globale).
-        - L'accuracy est peu informative ici (~14 % de positifs seulement).
-        """
-    )
+    mo.md(f"""
+    ## Conclusion
+    - **Recall = {m['recall']:.2f}** : détection des machines réellement à risque —
+      métrique critique (un faux négatif = panne manquée).
+    - **Precision = {m['precision']:.2f}** : fiabilité des alertes émises.
+    - **F1 = {m['f1']:.2f}**, **ROC-AUC = {m.get('roc_auc', float('nan')):.2f}** (séparabilité globale).
+    - L'accuracy est peu informative ici (~14 % de positifs seulement).
+    """)
     return
 
 

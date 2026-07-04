@@ -24,14 +24,12 @@ def _():
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
-        # Évaluation — Baseline régression linéaire (`RUL`)
+    mo.md(r"""
+    # Évaluation — Baseline régression linéaire (`RUL`)
 
-        Modèle rechargé : `models/baseline_linreg.joblib` (baseline exigée par le CDC).
-        Régression linéaire simple : **plancher de performance** pour la prédiction du RUL.
-        """
-    )
+    Modèle rechargé : `models/baseline_linreg.joblib` (baseline exigée par le CDC).
+    Régression linéaire simple : **plancher de performance** pour la prédiction du RUL.
+    """)
     return
 
 
@@ -75,16 +73,14 @@ def _(metrics, model, np, prep):
 
 @app.cell
 def _(m, mo):
-    mo.md(
-        f"""
-        ## Conclusion
-        - **MAE = {m['MAE']:.1f}**, **RMSE = {m['RMSE']:.1f}**, **R² = {m['R2']:.2f}**,
-          **Score NASA = {m['NASA']:.0f}**.
-        - Modèle linéaire : hypothèse d'une relation linéaire capteurs → RUL, trop
-          simpliste pour une dégradation non linéaire. Sert de **référence minimale** :
-          tout modèle avancé doit faire nettement mieux.
-        """
-    )
+    mo.md(f"""
+    ## Conclusion
+    - **MAE = {m['MAE']:.1f}**, **RMSE = {m['RMSE']:.1f}**, **R² = {m['R2']:.2f}**,
+      **Score NASA = {m['NASA']:.0f}**.
+    - Modèle linéaire : hypothèse d'une relation linéaire capteurs → RUL, trop
+      simpliste pour une dégradation non linéaire. Sert de **référence minimale** :
+      tout modèle avancé doit faire nettement mieux.
+    """)
     return
 
 

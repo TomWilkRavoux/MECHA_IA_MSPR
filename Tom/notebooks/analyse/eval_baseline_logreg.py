@@ -24,15 +24,13 @@ def _():
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
-        # Évaluation — Baseline régression logistique (classification `at_risk`)
+    mo.md(r"""
+    # Évaluation — Baseline régression logistique (classification `at_risk`)
 
-        Modèle rechargé : `models/baseline_logreg.joblib` (baseline exigée par le CDC,
-        entraînée dans `02_gradient_boosting_baseline.py`). Modèle linéaire simple :
-        **plancher de performance** et point de comparaison très interprétable.
-        """
-    )
+    Modèle rechargé : `models/baseline_logreg.joblib` (baseline exigée par le CDC,
+    entraînée dans `02_gradient_boosting_baseline.py`). Modèle linéaire simple :
+    **plancher de performance** et point de comparaison très interprétable.
+    """)
     return
 
 
@@ -78,17 +76,15 @@ def _(metrics, model, np, prep):
 
 @app.cell
 def _(m, mo):
-    mo.md(
-        f"""
-        ## Conclusion
-        - **F1 = {m['f1']:.2f}**, **Recall = {m['recall']:.2f}**,
-          **ROC-AUC = {m.get('roc_auc', float('nan')):.2f}**.
-        - Modèle linéaire : incapable de capturer les interactions non linéaires entre
-          capteurs. L'écart avec RF / XGBoost / LSTM **mesure l'apport** de ces modèles.
-        - Avantage : les **coefficients** sont directement lisibles (sens et poids de
-          chaque capteur), utile pour expliquer la décision au métier.
-        """
-    )
+    mo.md(f"""
+    ## Conclusion
+    - **F1 = {m['f1']:.2f}**, **Recall = {m['recall']:.2f}**,
+      **ROC-AUC = {m.get('roc_auc', float('nan')):.2f}**.
+    - Modèle linéaire : incapable de capturer les interactions non linéaires entre
+      capteurs. L'écart avec RF / XGBoost / LSTM **mesure l'apport** de ces modèles.
+    - Avantage : les **coefficients** sont directement lisibles (sens et poids de
+      chaque capteur), utile pour expliquer la décision au métier.
+    """)
     return
 
 
