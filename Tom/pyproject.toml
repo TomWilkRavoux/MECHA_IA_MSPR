@@ -9,4 +9,9 @@ dependencies = [
     "polars>=1.42.1",
     "scikit-learn>=1.9.0",
     "sweetviz>=2.3.3",
+    "torch>=2.11.0",
+    "xgboost>=3.3.0",
 ]
+
+[[tool.uv.index]]
+url = "https://download.pytorch.org/whl/cu128"
