@@ -47,7 +47,11 @@ def _(Path, mo, pl):
     }
 
     def add_ids(df: pl.DataFrame, name: str) -> pl.DataFrame:
-        usine = "Usine A" if name in ("FD001", "FD002") else "Usine B"
+        usine = (
+            "Usine A (mono-régime)"
+            if name in ("FD001", "FD003")
+            else "Usine B (polyvalent)"
+        )
         ligne = (
             "Ligne 1 (dédiée)"
             if name in ("FD001", "FD003")
@@ -142,9 +146,11 @@ def _(df_clf, df_rul, mo, pl):
 
 @app.cell
 def _(df_clf, df_rul, mo):
-    df_clf.write_csv("./assets/KaggleDataset/mecha_train_classification.csv")
-    df_rul.write_csv("./assets/KaggleDataset/mecha_train_rul.csv")
-    mo.md("`mecha_train_classification.csv` et `mecha_train_rul.csv` écrits.")
+    df_clf.write_csv("./assets/KaggleDataset/mecha_train_Fusion2_classification.csv")
+    df_rul.write_csv("./assets/KaggleDataset/mecha_train_Fusion2_rul.csv")
+    mo.md(
+        "`mecha_train_Fusion2_classification.csv` et `mecha_train_Fusion2_rul.csv` écrits."
+    )
     return
 
 
@@ -164,14 +170,11 @@ def _(RUL_TRUE, build):
 
 @app.cell
 def _(df_rul_true, df_test, mo):
-    df_test.write_csv("./assets/KaggleDataset/mecha_test_classification.csv")
-    df_rul_true.write_csv("./assets/KaggleDataset/mecha_rul_true.csv")
-    mo.md("`mecha_test_classification.csv` et `mecha_rul_true.csv` écrits.")
-    return
-
-
-@app.cell
-def _():
+    df_test.write_csv("./assets/KaggleDataset/mecha_test_Fusion2_classification.csv")
+    df_rul_true.write_csv("./assets/KaggleDataset/mecha_rul_Fusion2_true.csv")
+    mo.md(
+        "`mecha_test_Fusion2_classification.csv` et `mecha_Fusion2_rul_true.csv` écrits."
+    )
     return
 
 
