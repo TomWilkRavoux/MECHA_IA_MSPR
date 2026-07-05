@@ -120,7 +120,7 @@ surchargée par la variable d'environnement `MECHA_API_URL`).
 
 ### Conteneurisé (Docker Compose)
 
-Depuis `Tom/` (les modèles `models/` et le CSV de démo `assets/` sont montés en volumes) :
+Depuis `Tom/` :
 
 ```bash
 docker compose up --build
@@ -128,8 +128,9 @@ docker compose up --build
 #  → Dashboard  http://localhost:8501   (MECHA_API_URL=http://backend:8000 injecté)
 ```
 
-Deux images **code-only** (`Dockerfile.backend` en torch **CPU**, `Dockerfile.frontend`). Le
-backend expose un `healthcheck` sur `/health` ; le frontend démarre une fois le backend *healthy*.
+Le **backend** est **auto-porté** (torch **CPU** + les 3 artefacts LSTM embarqués : aucun volume
+requis) ; il expose un `healthcheck` sur `/health`. Le **frontend** (`Dockerfile.frontend`) monte
+le CSV de démo (`./assets`, non versionné) et démarre une fois le backend *healthy*.
 
 ## 6. Tests & CI
 

@@ -15,10 +15,7 @@ services:
     image: mecha-backend
     ports:
       - "8000:8000"
-    # Artefacts d'inférence montés depuis l'hôte (non versionnés) :
-    # scaler.joblib, lstm_classifier.pt, lstm_regressor.pt
-    volumes:
-      - ./models:/app/models:ro
+    # Image auto-portée : les 3 artefacts d'inférence sont embarqués (aucun volume requis).
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 10s

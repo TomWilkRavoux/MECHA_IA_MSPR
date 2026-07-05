@@ -8,8 +8,13 @@
 __marimo__/
 *.pyc
 
-# Données montées au runtime (volumes) — inutiles dans le contexte de build
-models/
+# Modèles : on n'embarque que les 3 artefacts d'inférence (le reste est volumineux/inutile)
+models/*
+!models/scaler.joblib
+!models/lstm_classifier.pt
+!models/lstm_regressor.pt
+
+# Jeu de démo : monté au runtime (volume) côté frontend — inutile dans le contexte de build
 assets/
 
 # Livrables / exploration non nécessaires au runtime
