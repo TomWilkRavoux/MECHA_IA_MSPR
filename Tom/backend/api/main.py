@@ -1,4 +1,4 @@
-"""Application FastAPI — exposition du LSTM de maintenance prédictive MECHA.
+"""Application FastAPI - exposition du LSTM de maintenance prédictive MECHA.
 
 Lancement (depuis Tom/) :
     uv run uvicorn backend.api.main:app --reload
@@ -14,13 +14,14 @@ from fastapi import FastAPI, HTTPException
 
 from ml.prep import FEATURES, RISK_THRESHOLD, SEQ_LEN
 
-from .inference import service
+from .inference import CRITICAL_PROBA, CRITICAL_RUL, service
 from .schemas import (
     BatchPredictRequest,
     BatchPredictResponse,
     HealthResponse,
     PredictRequest,
     PredictResponse,
+    TrajectoryResponse,
 )
 
 
@@ -35,7 +36,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="MECHA — API Maintenance Prédictive (LSTM)",
+    title="MECHA - API Maintenance Prédictive (LSTM)",
     description=(
         "Expose le modèle LSTM (classification `at_risk` + régression `RUL`) "
         "pour l'exploitation métier : alertes et priorisation des interventions."
@@ -55,6 +56,8 @@ def health() -> HealthResponse:
         seq_len=SEQ_LEN,
         n_features=len(FEATURES),
         risk_threshold=RISK_THRESHOLD,
+        critical_rul=CRITICAL_RUL,
+        critical_proba=CRITICAL_PROBA,
     )
 
 
@@ -74,7 +77,9 @@ def _predict_one(req: PredictRequest) -> PredictResponse:
 def predict(req: PredictRequest) -> PredictResponse:
     """Prédit l'état `at_risk` et le RUL d'une machine à partir de ses cycles."""
     if not service.ready:
-        raise HTTPException(status_code=503, detail="Modèles non chargés (voir /health).")
+        raise HTTPException(
+            status_code=503, detail="Modèles non chargés (voir /health)."
+        )
     return _predict_one(req)
 
 
@@ -82,5 +87,18 @@ def predict(req: PredictRequest) -> PredictResponse:
 def predict_batch(req: BatchPredictRequest) -> BatchPredictResponse:
     """Prédiction pour un lot de machines (supervision d'un parc / d'une ligne)."""
     if not service.ready:
-        raise HTTPException(status_code=503, detail="Modèles non chargés (voir /health).")
+        raise HTTPException(
+            status_code=503, detail="Modèles non chargés (voir /health)."
+        )
     return BatchPredictResponse(results=[_predict_one(m) for m in req.machines])
+
+
+@app.post("/predict/trajectory", response_model=TrajectoryResponse, tags=["prediction"])
+def predict_trajectory(req: PredictRequest) -> TrajectoryResponse:
+    """Trajectoire cycle par cycle d'UNE machine (RUL et proba de risque au fil des cycles)."""
+    if not service.ready:
+        raise HTTPException(
+            status_code=503, detail="Modèles non chargés (voir /health)."
+        )
+    points = service.predict_trajectory([c.values for c in req.cycles])
+    return TrajectoryResponse(machine_id=req.machine_id, points=points)

@@ -25,7 +25,7 @@ def _():
 @app.cell
 def _(mo):
     mo.md(r"""
-    # Évaluation — Baseline régression linéaire (`RUL`)
+    # Évaluation - Baseline régression linéaire (`RUL`)
 
     Modèle rechargé : `models/baseline_linreg.joblib` (baseline exigée par le CDC).
     Régression linéaire simple : **plancher de performance** pour la prédiction du RUL.
@@ -47,26 +47,33 @@ def _(joblib, prep):
 @app.cell
 def _(metrics, mo, pred, y):
     m = metrics.regression_metrics(y, pred)
-    mo.md("## Métriques (test)\n\n" + "\n".join(f"- **{k}** : {v:.2f}" for k, v in m.items()))
+    mo.md(
+        "## Métriques (test)\n\n"
+        + "\n".join(f"- **{k}** : {v:.2f}" for k, v in m.items())
+    )
     return (m,)
 
 
 @app.cell
 def _(metrics, pred, y):
-    metrics.plot_rul_scatter(y, pred, title="Baseline LinReg — RUL prédit vs réel (test)")
+    metrics.plot_rul_scatter(
+        y, pred, title="Baseline LinReg - RUL prédit vs réel (test)"
+    )
     return
 
 
 @app.cell
 def _(metrics, pred, y):
-    metrics.plot_error_hist(y, pred, title="Baseline LinReg — Distribution de l'erreur de RUL")
+    metrics.plot_error_hist(
+        y, pred, title="Baseline LinReg - Distribution de l'erreur de RUL"
+    )
     return
 
 
 @app.cell
 def _(metrics, model, np, prep):
     metrics.plot_feature_importance(
-        prep.FEATURES, np.abs(model.coef_), title="Baseline LinReg — |coefficients|"
+        prep.FEATURES, np.abs(model.coef_), title="Baseline LinReg - |coefficients|"
     )
     return
 
@@ -75,8 +82,8 @@ def _(metrics, model, np, prep):
 def _(m, mo):
     mo.md(f"""
     ## Conclusion
-    - **MAE = {m['MAE']:.1f}**, **RMSE = {m['RMSE']:.1f}**, **R² = {m['R2']:.2f}**,
-      **Score NASA = {m['NASA']:.0f}**.
+    - **MAE = {m["MAE"]:.1f}**, **RMSE = {m["RMSE"]:.1f}**, **R² = {m["R2"]:.2f}**,
+      **Score NASA = {m["NASA"]:.0f}**.
     - Modèle linéaire : hypothèse d'une relation linéaire capteurs → RUL, trop
       simpliste pour une dégradation non linéaire. Sert de **référence minimale** :
       tout modèle avancé doit faire nettement mieux.

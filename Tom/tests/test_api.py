@@ -36,6 +36,10 @@ def test_health(client):
     body = client.get("/health").json()
     assert body["n_features"] == len(FEATURES)
     assert body["seq_len"] == 30
+    # Seuils métier exposés pour le paramétrage du dashboard.
+    assert body["risk_threshold"] == 30
+    assert 0.0 <= body["critical_proba"] <= 1.0
+    assert 0 < body["critical_rul"] <= body["risk_threshold"]
 
 
 def test_missing_feature_returns_422(client):
@@ -65,3 +69,21 @@ def test_batch(client):
     r = client.post("/predict/batch", json={"machines": machines})
     assert r.status_code == 200
     assert len(r.json()["results"]) == 3
+
+
+@needs_models
+def test_trajectory_contract(client):
+    test = load_test()
+    mid = test["machine_id"][0]
+    cycles = _cycles_for(test, mid)
+    r = client.post("/predict/trajectory", json={"machine_id": str(mid), "cycles": cycles})
+    assert r.status_code == 200
+    points = r.json()["points"]
+    # Un point par cycle observé, aligné sur l'ordre d'entrée.
+    assert len(points) == len(cycles)
+    assert [p["cycle_index"] for p in points] == list(range(len(cycles)))
+    for p in points:
+        assert 0.0 <= p["risk_probability"] <= 1.0
+        assert p["alert_level"] in {"ok", "warning", "critical"}
+        # cohérence at_risk (classif) <-> alerte
+        assert (p["alert_level"] == "ok") == (not p["at_risk"])

@@ -65,10 +65,27 @@ class BatchPredictResponse(BaseModel):
     results: list[PredictResponse]
 
 
+class TrajectoryPoint(BaseModel):
+    """Prédiction pour un cycle de la trajectoire (fenêtre glissante s'y terminant)."""
+
+    cycle_index: int = Field(..., description="Position du cycle dans la série fournie (0-indexé).")
+    at_risk: bool = Field(..., description="Décision de la tête classification (proba >= 0.5).")
+    risk_probability: float = Field(..., ge=0.0, le=1.0, description="Probabilité classe 'à risque'.")
+    rul_predicted: float = Field(..., description="RUL estimé à ce cycle (cycles restants).")
+    alert_level: str = Field(..., description="ok | warning | critical (règle métier).")
+
+
+class TrajectoryResponse(BaseModel):
+    machine_id: str
+    points: list[TrajectoryPoint]
+
+
 class HealthResponse(BaseModel):
     status: str
     models_loaded: bool
     device: str
     seq_len: int
     n_features: int
-    risk_threshold: int
+    risk_threshold: int = Field(..., description="Seuil at_risk (RUL <= seuil).")
+    critical_rul: int = Field(..., description="RUL en-deçà duquel l'alerte passe 'critical'.")
+    critical_proba: float = Field(..., description="Proba au-delà de laquelle l'alerte passe 'critical'.")

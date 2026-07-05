@@ -26,7 +26,7 @@ def _():
 @app.cell
 def _(mo):
     mo.md(r"""
-    # Évaluation — LSTM (classification `at_risk`)
+    # Évaluation - LSTM (classification `at_risk`)
 
     Modèle rechargé : `models/lstm_classifier.pt` (PyTorch, entraîné sur GPU dans
     `03_lstm.py`). Évaluation sur une **fenêtre glissante** des derniers `SEQ_LEN`
@@ -44,7 +44,9 @@ def _(load_lstm, np, prep, torch):
     ev = prep.test_last_cycle_eval()
     rul_by_id = dict(zip(ev["machine_id"].to_list(), ev["RUL_true"].to_list()))
     xw, ids = prep.make_test_windows(prep.load_test(), scaler=scaler)
-    y = (np.array([rul_by_id[i] for i in ids], dtype=float) <= prep.RISK_THRESHOLD).astype(int)
+    y = (
+        np.array([rul_by_id[i] for i in ids], dtype=float) <= prep.RISK_THRESHOLD
+    ).astype(int)
 
     xt = torch.as_tensor(xw, dtype=torch.float32, device=device)
     with torch.no_grad():
@@ -65,19 +67,19 @@ def _(device, metrics, mo, pred, proba, y):
 
 @app.cell
 def _(metrics, pred, y):
-    metrics.plot_confusion(y, pred, title="LSTM — Matrice de confusion (at_risk)")
+    metrics.plot_confusion(y, pred, title="LSTM - Matrice de confusion (at_risk)")
     return
 
 
 @app.cell
 def _(metrics, proba, y):
-    metrics.plot_roc(y, proba, title="LSTM — Courbe ROC (at_risk)")
+    metrics.plot_roc(y, proba, title="LSTM - Courbe ROC (at_risk)")
     return
 
 
 @app.cell
 def _(metrics, proba, y):
-    metrics.plot_pr(y, proba, title="LSTM — Précision/Rappel (at_risk)")
+    metrics.plot_pr(y, proba, title="LSTM - Précision/Rappel (at_risk)")
     return
 
 
@@ -85,8 +87,8 @@ def _(metrics, proba, y):
 def _(m, mo):
     mo.md(f"""
     ## Conclusion
-    - **Recall = {m['recall']:.2f}**, **Precision = {m['precision']:.2f}**,
-      **F1 = {m['f1']:.2f}**, **ROC-AUC = {m.get('roc_auc', float('nan')):.2f}**.
+    - **Recall = {m["recall"]:.2f}**, **Precision = {m["precision"]:.2f}**,
+      **F1 = {m["f1"]:.2f}**, **ROC-AUC = {m.get("roc_auc", float("nan")):.2f}**.
     - Le LSTM exploite la **dynamique temporelle** (dérive des capteurs sur la
       fenêtre) que les modèles tabulaires ignorent : gain typique sur le recall
       (détection plus fine des machines en fin de vie).

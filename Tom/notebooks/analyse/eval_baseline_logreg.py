@@ -25,7 +25,7 @@ def _():
 @app.cell
 def _(mo):
     mo.md(r"""
-    # Évaluation — Baseline régression logistique (classification `at_risk`)
+    # Évaluation - Baseline régression logistique (classification `at_risk`)
 
     Modèle rechargé : `models/baseline_logreg.joblib` (baseline exigée par le CDC,
     entraînée dans `02_gradient_boosting_baseline.py`). Modèle linéaire simple :
@@ -49,19 +49,22 @@ def _(joblib, prep):
 @app.cell
 def _(metrics, mo, pred, proba, y):
     m = metrics.classification_metrics(y, pred, proba)
-    mo.md("## Métriques (test)\n\n" + "\n".join(f"- **{k}** : {v:.3f}" for k, v in m.items()))
+    mo.md(
+        "## Métriques (test)\n\n"
+        + "\n".join(f"- **{k}** : {v:.3f}" for k, v in m.items())
+    )
     return (m,)
 
 
 @app.cell
 def _(metrics, pred, y):
-    metrics.plot_confusion(y, pred, title="Baseline LogReg — Confusion (at_risk)")
+    metrics.plot_confusion(y, pred, title="Baseline LogReg - Confusion (at_risk)")
     return
 
 
 @app.cell
 def _(metrics, proba, y):
-    metrics.plot_roc(y, proba, title="Baseline LogReg — Courbe ROC (at_risk)")
+    metrics.plot_roc(y, proba, title="Baseline LogReg - Courbe ROC (at_risk)")
     return
 
 
@@ -69,7 +72,7 @@ def _(metrics, proba, y):
 def _(metrics, model, np, prep):
     # Coefficients linéaires = poids de chaque capteur (interprétabilité directe)
     metrics.plot_feature_importance(
-        prep.FEATURES, np.abs(model.coef_[0]), title="Baseline LogReg — |coefficients|"
+        prep.FEATURES, np.abs(model.coef_[0]), title="Baseline LogReg - |coefficients|"
     )
     return
 
@@ -78,8 +81,8 @@ def _(metrics, model, np, prep):
 def _(m, mo):
     mo.md(f"""
     ## Conclusion
-    - **F1 = {m['f1']:.2f}**, **Recall = {m['recall']:.2f}**,
-      **ROC-AUC = {m.get('roc_auc', float('nan')):.2f}**.
+    - **F1 = {m["f1"]:.2f}**, **Recall = {m["recall"]:.2f}**,
+      **ROC-AUC = {m.get("roc_auc", float("nan")):.2f}**.
     - Modèle linéaire : incapable de capturer les interactions non linéaires entre
       capteurs. L'écart avec RF / XGBoost / LSTM **mesure l'apport** de ces modèles.
     - Avantage : les **coefficients** sont directement lisibles (sens et poids de

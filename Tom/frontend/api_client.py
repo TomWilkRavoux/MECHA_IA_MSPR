@@ -29,6 +29,16 @@ class ApiClient:
         r.raise_for_status()
         return r.json()["features"]
 
+    def predict(self, machine: dict) -> dict:
+        """Prédiction pour UNE machine (endpoint `/predict`) -> stats + niveau d'alerte."""
+        r = requests.post(
+            f"{self.base_url}/predict",
+            json=machine,
+            timeout=self.timeout,
+        )
+        r.raise_for_status()
+        return r.json()
+
     def predict_batch(self, machines: list[dict]) -> list[dict]:
         r = requests.post(
             f"{self.base_url}/predict/batch",
@@ -38,16 +48,34 @@ class ApiClient:
         r.raise_for_status()
         return r.json()["results"]
 
+    def predict_trajectory(self, machine: dict) -> list[dict]:
+        """Trajectoire cycle par cycle d'une machine -> liste de points prédits."""
+        r = requests.post(
+            f"{self.base_url}/predict/trajectory",
+            json=machine,
+            timeout=self.timeout,
+        )
+        r.raise_for_status()
+        return r.json()["points"]
+
+
+def build_single_request(machine_id, g: pd.DataFrame, features: list[str]) -> dict:
+    """(cycles d'UNE machine) -> corps `/predict` ou `/predict/trajectory`.
+
+    Ordonne par `cycle` et construit un cycle `{values: {feature: valeur}}` par
+    ligne. Les colonnes méta sont ignorées.
+    """
+    g = g.sort_values("cycle") if "cycle" in g.columns else g
+    cycles = [{"values": {f: float(row[f]) for f in features}} for _, row in g.iterrows()]
+    return {"machine_id": str(machine_id), "cycles": cycles}
+
 
 def build_requests(df: pd.DataFrame, features: list[str]) -> list[dict]:
     """(DataFrame de cycles machine) -> corps `/predict/batch`.
 
-    Regroupe par `machine_id`, ordonne par `cycle`, et construit un cycle
-    `{values: {feature: valeur}}` par ligne. Les colonnes méta sont ignorées.
+    Regroupe par `machine_id` et délègue à `build_single_request` pour chaque machine.
     """
-    payload: list[dict] = []
-    for machine_id, g in df.groupby("machine_id", sort=False):
-        g = g.sort_values("cycle") if "cycle" in g.columns else g
-        cycles = [{"values": {f: float(row[f]) for f in features}} for _, row in g.iterrows()]
-        payload.append({"machine_id": str(machine_id), "cycles": cycles})
-    return payload
+    return [
+        build_single_request(machine_id, g, features)
+        for machine_id, g in df.groupby("machine_id", sort=False)
+    ]

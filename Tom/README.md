@@ -1,4 +1,4 @@
-# MECHA — Partie IA (MSPR TPRE841)
+# MECHA - Partie IA (MSPR TPRE841)
 
 Maintenance prédictive sur dataset **NASA C-MAPSS** (reconditionné au vocabulaire MECHA).
 Deux tâches : **classification `at_risk`** (RUL ≤ 30 cycles) et **régression `RUL`**.
@@ -44,7 +44,7 @@ Les notebooks lisent leurs données dans `assets/KaggleDataset/` via `ml/prep.py
 
 ```
 Tom/assets/KaggleDataset/
-├── mecha_train_classification.csv   # entraînement — contient at_risk + RUL
+├── mecha_train_classification.csv   # entraînement - contient at_risk + RUL
 ├── mecha_train_rul.csv              # entraînement régression (cible RUL)
 ├── mecha_test_classification.csv    # test (features seules, machines tronquées)
 └── mecha_rul_true.csv               # vérité terrain : RUL au dernier cycle test
@@ -95,7 +95,7 @@ uv run marimo edit notebooks/analyse/eval_rf_classifier.py
 
 ### Pré-analyse & fusion des données (`preAnalyse/`)
 
-Optionnel — reproduit l'exploration et la construction des jeux MECHA à partir des
+Optionnel - reproduit l'exploration et la construction des jeux MECHA à partir des
 CSV bruts :
 
 ```bash
@@ -105,7 +105,7 @@ uv run marimo edit preAnalyse/fusionDatasetFinal.py  # consolidation MECHA
 
 ---
 
-## 4. Exposition du modèle — API REST (LSTM)
+## 4. Exposition du modèle - API REST (LSTM)
 
 Le modèle **LSTM** (retenu comme meilleur, cf. `docs/README.md`) est exposé via une
 **API REST FastAPI** pour l'exploitation métier (maintenance / supervision), conformément
@@ -113,19 +113,19 @@ au CDC §5. Elle sert les deux têtes du modèle : **classification `at_risk`** 
 **régression `RUL`**, enrichies d'un **niveau d'alerte** (`ok` / `warning` / `critical`).
 
 > Prérequis : modèles entraînés présents dans `models/` (`scaler.joblib`,
-> `lstm_classifier.pt`, `lstm_regressor.pt`) — sinon lancer d'abord le notebook `03_lstm`.
+> `lstm_classifier.pt`, `lstm_regressor.pt`) - sinon lancer d'abord le notebook `03_lstm`.
 
 ```bash
-# Depuis Tom/ — lance le serveur (http://localhost:8000)
+# Depuis Tom/ - lance le serveur (http://localhost:8000)
 uv run uvicorn backend.api.main:app --reload
 ```
 
 - **Doc interactive (Swagger)** : http://localhost:8000/docs
 - **Endpoints** :
-  - `GET /health` — état du service + modèles chargés (sonde Docker/CI)
-  - `GET /features` — liste ordonnée des 24 variables attendues par cycle
-  - `POST /predict` — prédiction pour **une** machine (série de cycles)
-  - `POST /predict/batch` — prédiction pour un **lot** de machines
+  - `GET /health` - état du service + modèles chargés (sonde Docker/CI)
+  - `GET /features` - liste ordonnée des 24 variables attendues par cycle
+  - `POST /predict` - prédiction pour **une** machine (série de cycles)
+  - `POST /predict/batch` - prédiction pour un **lot** de machines
 
 ### Exemple d'appel
 
@@ -165,7 +165,7 @@ si `RUL ≤ 15` **ou** `proba ≥ 0.75`, `warning` si `at_risk` sans être criti
 
 ---
 
-## 5. Interface métier — Dashboard (Streamlit)
+## 5. Interface métier - Dashboard (Streamlit)
 
 Dashboard de supervision qui **consomme l'API** (aucun modèle chargé côté frontend) :
 priorisation des interventions par RUL, niveaux d'alerte, KPI parc et fiche machine

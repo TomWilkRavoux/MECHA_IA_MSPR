@@ -1,4 +1,4 @@
-# Modèle — Random Forest (cœur de la solution)
+# Modèle - Random Forest (cœur de la solution)
 
 > Notebook d'entraînement : `notebooks/01_random_forest.py`
 > Notebooks d'évaluation : `notebooks/analyse/eval_rf_classifier.py`,
@@ -57,8 +57,8 @@ Deux forêts distinctes, une par tâche :
 
 - **Net gain sur la baseline** : F1 0.82 → 0.86, RUL RMSE 31.5 → 27.3, score NASA divisé
   par ~1.7. Les interactions entre capteurs paient.
-- **Recall = 0.93** : la grande majorité des machines à risque sont détectées — critère
+- **Recall = 0.93** : la grande majorité des machines à risque sont détectées - critère
   clé pour éviter les pannes non planifiées.
 - **Limites** : modèle **lourd en mémoire** (le régresseur fait ~295 Mo) car il stocke
   200 arbres profonds ; il traite chaque cycle **isolément** et n'exploite pas la
-  **séquence temporelle** — c'est ce que le LSTM viendra chercher.
+  **séquence temporelle** - c'est ce que le LSTM viendra chercher.
