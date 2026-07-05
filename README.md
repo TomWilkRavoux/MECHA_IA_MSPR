@@ -159,7 +159,7 @@ commit id: "main-tip"
 
 Branche de **production**. Elle contient uniquement le code stable et déployé en production. On ne code jamais directement dessus. Toutes les autres branches permanentes sont tirées depuis `main`.
 
-- **Source :** —
+- **Source :** -
 - **Merge vers :** elle-même (via release ou hotfix)
 - **Convention de nommage :** `main`
 
@@ -171,7 +171,7 @@ Branche de **préparation d'une release**. Elle est créée depuis `main` quand 
 
 - **Source :** `main`
 - **Merge vers :** `main` (après validation finale)
-- **Convention de nommage :** `release/NomProjet-X.Y` — ex : `release/msprIA-1.0`
+- **Convention de nommage :** `release/NomProjet-X.Y` - ex : `release/msprIA-1.0`
 
 ---
 
@@ -191,7 +191,7 @@ Branche de **correction urgente**. Elle est créée directement depuis `main` po
 
 - **Source :** `main`
 - **Merge vers :** `main`, `release/...`, `integration`, `develop`
-- **Convention de nommage :** `hotfix/nom_ticket_jira` — ex : `hotfix/IN-001_correction_login`
+- **Convention de nommage :** `hotfix/nom_ticket_jira` - ex : `hotfix/IN-001_correction_login`
 
 ---
 
@@ -211,7 +211,7 @@ Branche de **développement d'une fonctionnalité**. Chaque nouvelle feature est
 
 - **Source :** `develop`
 - **Merge vers :** `develop`
-- **Convention de nommage :** `feature/nom_ticket_jira` — ex : `feature/IN-1_authentification_oauth`
+- **Convention de nommage :** `feature/nom_ticket_jira` - ex : `feature/IN-1_authentification_oauth`
 
 ---
 
@@ -221,11 +221,11 @@ Branche de **correction de bug non critique**. Elle corrige un bug identifié pe
 
 - **Source :** `develop` ou `feature/...`
 - **Merge vers :** branche source (`develop` ou `feature/...`)
-- **Convention de nommage :** `bugfix/nom_ticket_jira` — ex : `bugfix/IN-2_correction_formulaire`
+- **Convention de nommage :** `bugfix/nom_ticket_jira` - ex : `bugfix/IN-2_correction_formulaire`
 
 ---
 
-## Pattern GitFlow — Cycle de vie complet
+## Pattern GitFlow - Cycle de vie complet
 
 ```
 main
