@@ -24,7 +24,7 @@ def _():
 @app.cell
 def _(mo):
     mo.md(r"""
-    # Évaluation — XGBoost (régression `RUL`)
+    # Évaluation - XGBoost (régression `RUL`)
 
     Modèle rechargé : `models/xgb_regressor.joblib` (entraîné dans
     `02_gradient_boosting_baseline.py`, early stopping sur la validation).
@@ -46,26 +46,31 @@ def _(joblib, prep):
 @app.cell
 def _(metrics, mo, pred, y):
     m = metrics.regression_metrics(y, pred)
-    mo.md("## Métriques (test)\n\n" + "\n".join(f"- **{k}** : {v:.2f}" for k, v in m.items()))
+    mo.md(
+        "## Métriques (test)\n\n"
+        + "\n".join(f"- **{k}** : {v:.2f}" for k, v in m.items())
+    )
     return (m,)
 
 
 @app.cell
 def _(metrics, pred, y):
-    metrics.plot_rul_scatter(y, pred, title="XGBoost — RUL prédit vs réel (test)")
+    metrics.plot_rul_scatter(y, pred, title="XGBoost - RUL prédit vs réel (test)")
     return
 
 
 @app.cell
 def _(metrics, pred, y):
-    metrics.plot_error_hist(y, pred, title="XGBoost — Distribution de l'erreur de RUL")
+    metrics.plot_error_hist(y, pred, title="XGBoost - Distribution de l'erreur de RUL")
     return
 
 
 @app.cell
 def _(metrics, model, prep):
     metrics.plot_feature_importance(
-        prep.FEATURES, model.feature_importances_, title="XGBoost — Importance des variables (RUL)"
+        prep.FEATURES,
+        model.feature_importances_,
+        title="XGBoost - Importance des variables (RUL)",
     )
     return
 
@@ -74,8 +79,8 @@ def _(metrics, model, prep):
 def _(m, mo):
     mo.md(f"""
     ## Conclusion
-    - **MAE = {m['MAE']:.1f}**, **RMSE = {m['RMSE']:.1f}**, **R² = {m['R2']:.2f}**,
-      **Score NASA = {m['NASA']:.0f}**.
+    - **MAE = {m["MAE"]:.1f}**, **RMSE = {m["RMSE"]:.1f}**, **R² = {m["R2"]:.2f}**,
+      **Score NASA = {m["NASA"]:.0f}**.
     - Le boosting réduit nettement l'erreur par rapport à la baseline linéaire ;
       performances proches de la Random Forest, souvent avec un meilleur score NASA
       (moins de retards de prédiction).

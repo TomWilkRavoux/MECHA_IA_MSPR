@@ -4,8 +4,8 @@ Ce document explique **d'où viennent les données**, **pourquoi** elles sont r�
 usines et lignes de production, et **comment** elles sont consolidées. Il documente deux
 scripts :
 
-- `analyseGlobal.py` — exploration qui **justifie** la répartition en usines / lignes ;
-- `fusionDatasetFinal.py` — **consolidation** des jeux au vocabulaire MECHA.
+- `analyseGlobal.py` - exploration qui **justifie** la répartition en usines / lignes ;
+- `fusionDatasetFinal.py` - **consolidation** des jeux au vocabulaire MECHA.
 
 ---
 
@@ -31,7 +31,7 @@ Ces 4 sous-jeux sont le point de départ de la répartition MECHA.
 L'objectif : ne pas répartir les données au hasard, mais s'appuyer sur **deux axes réels**
 qui distinguent les sous-jeux. `analyseGlobal.py` explore ces deux axes.
 
-### Axe 1 — Régime de fonctionnement → définit la **ligne de production**
+### Axe 1 - Régime de fonctionnement → définit la **ligne de production**
 
 Hypothèse : certaines machines tournent sur un **régime unique et stable**, d'autres sur
 **plusieurs régimes**. C'est vérifiable sur la dispersion des 3 réglages opératoires.
@@ -47,7 +47,7 @@ Hypothèse : certaines machines tournent sur un **régime unique et stable**, d'
 ➡️ Interprétation MECHA : une **ligne dédiée** (régime unique) vs une **ligne polyvalente**
 (régimes multiples).
 
-### Axe 2 — Modes de défaillance → définit l'**usine**
+### Axe 2 - Modes de défaillance → définit l'**usine**
 
 Le **mode de panne n'est pas une colonne** du dataset : c'est une caractéristique
 **documentée par la NASA** (PCoE) :
@@ -81,14 +81,14 @@ Ce script **fusionne** les 4 sous-jeux en fichiers exploitables, au vocabulaire 
 
 ### Transformations appliquées
 
-- **`add_ids`** — ajoute les colonnes métier à partir de la grille 2×2 :
+- **`add_ids`** - ajoute les colonnes métier à partir de la grille 2×2 :
   - `usine` : *Usine A* si FD001/FD002, sinon *Usine B* ;
   - `ligne_production` : *Ligne 1 (dédiée)* si FD001/FD003, sinon *Ligne 2 (polyvalente)* ;
   - `machine_id` : identifiant unique `"{subset}_u{unit:03d}"` (ex. `FD001_u012`) ;
   - `subset` : sous-jeu d'origine (traçabilité).
-- **`reorder`** — place les colonnes d'identité en tête (`machine_id, subset, usine,
+- **`reorder`** - place les colonnes d'identité en tête (`machine_id, subset, usine,
   ligne_production, unit, cycle`) puis les capteurs.
-- **`build`** — concatène verticalement les 4 sous-jeux transformés.
+- **`build`** - concatène verticalement les 4 sous-jeux transformés.
 
 ### Fichiers produits (dans `assets/KaggleDataset/`)
 
@@ -96,7 +96,7 @@ Ce script **fusionne** les 4 sous-jeux en fichiers exploitables, au vocabulaire 
 |---|---|---|
 | `mecha_train_classification.csv` | entraînement classification | `at_risk` (+ `RUL`) |
 | `mecha_train_rul.csv` | entraînement régression | `RUL` |
-| `mecha_test_classification.csv` | test (machines tronquées, **features seules**) | — |
+| `mecha_test_classification.csv` | test (machines tronquées, **features seules**) | - |
 | `mecha_rul_true.csv` | vérité terrain : RUL au dernier cycle (`RUL_true`) | `RUL_true` |
 
 - **Volumétrie** : ~**160 359 lignes** d'entraînement, **709 machines**.
@@ -117,5 +117,6 @@ Ce script **fusionne** les 4 sous-jeux en fichiers exploitables, au vocabulaire 
 - **Limites connues** : capteurs constants sur certains régimes, volumétrie inégale entre
   sous-jeux, RUL borné à 125 cycles pour l'apprentissage (voir docs modèles).
 
-> Pour le détail des colonnes, un **dictionnaire de données par colonne** reste à produire
-> (item ouvert de la feuille de route).
+> Le détail **par colonne** (type, unité, description, domaine) est documenté dans le
+> [dictionnaire de données](dictionnaire_donnees.md), dont la cohérence avec le schéma réel
+> est vérifiée automatiquement (`tests/test_data_dictionary.py`).

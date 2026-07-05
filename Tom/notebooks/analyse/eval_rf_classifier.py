@@ -24,7 +24,7 @@ def _():
 @app.cell
 def _(mo):
     mo.md(r"""
-    # Évaluation — Random Forest (classification `at_risk`)
+    # Évaluation - Random Forest (classification `at_risk`)
 
     Modèle rechargé : `models/rf_classifier.joblib` (entraîné dans `01_random_forest.py`).
     Évaluation sur le jeu de test officiel : dernier cycle observé de chaque machine,
@@ -48,32 +48,35 @@ def _(joblib, prep):
 @app.cell
 def _(metrics, mo, pred, proba, y):
     m = metrics.classification_metrics(y, pred, proba)
-    mo.md("## Métriques (test)\n\n" + "\n".join(f"- **{k}** : {v:.3f}" for k, v in m.items()))
+    mo.md(
+        "## Métriques (test)\n\n"
+        + "\n".join(f"- **{k}** : {v:.3f}" for k, v in m.items())
+    )
     return (m,)
 
 
 @app.cell
 def _(metrics, pred, y):
-    metrics.plot_confusion(y, pred, title="RF — Matrice de confusion (at_risk)")
+    metrics.plot_confusion(y, pred, title="RF - Matrice de confusion (at_risk)")
     return
 
 
 @app.cell
 def _(metrics, proba, y):
-    metrics.plot_roc(y, proba, title="RF — Courbe ROC (at_risk)")
+    metrics.plot_roc(y, proba, title="RF - Courbe ROC (at_risk)")
     return
 
 
 @app.cell
 def _(metrics, proba, y):
-    metrics.plot_pr(y, proba, title="RF — Précision/Rappel (at_risk)")
+    metrics.plot_pr(y, proba, title="RF - Précision/Rappel (at_risk)")
     return
 
 
 @app.cell
 def _(metrics, model, prep):
     metrics.plot_feature_importance(
-        prep.FEATURES, model.feature_importances_, title="RF — Importance des variables"
+        prep.FEATURES, model.feature_importances_, title="RF - Importance des variables"
     )
     return
 
@@ -82,10 +85,10 @@ def _(metrics, model, prep):
 def _(m, mo):
     mo.md(f"""
     ## Conclusion
-    - **Recall = {m['recall']:.2f}** : détection des machines réellement à risque —
+    - **Recall = {m["recall"]:.2f}** : détection des machines réellement à risque -
       métrique critique (un faux négatif = panne manquée).
-    - **Precision = {m['precision']:.2f}** : fiabilité des alertes émises.
-    - **F1 = {m['f1']:.2f}**, **ROC-AUC = {m.get('roc_auc', float('nan')):.2f}** (séparabilité globale).
+    - **Precision = {m["precision"]:.2f}** : fiabilité des alertes émises.
+    - **F1 = {m["f1"]:.2f}**, **ROC-AUC = {m.get("roc_auc", float("nan")):.2f}** (séparabilité globale).
     - L'accuracy est peu informative ici (~14 % de positifs seulement).
     """)
     return

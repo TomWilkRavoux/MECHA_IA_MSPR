@@ -1,4 +1,4 @@
-# Modèle — Baseline linéaire (régression logistique + linéaire)
+# Modèle - Baseline linéaire (régression logistique + linéaire)
 
 > Notebook d'entraînement : `notebooks/02_gradient_boosting_baseline.py`
 > Notebooks d'évaluation : `notebooks/analyse/eval_baseline_logreg.py`,
@@ -10,7 +10,7 @@
 Le CDC exige une **régression simple comme baseline de comparaison**. Ce n'est pas le
 modèle « performant » visé, mais un **plancher de référence** indispensable :
 
-- il **quantifie l'apport** des modèles avancés (RF, XGBoost, LSTM) — l'écart de métriques
+- il **quantifie l'apport** des modèles avancés (RF, XGBoost, LSTM) - l'écart de métriques
   mesure exactement ce que gagnent les non-linéarités ;
 - il est **totalement interprétable** : chaque capteur a un coefficient de signe et de poids
   lisibles, facile à expliquer au métier ;
@@ -25,7 +25,7 @@ Communes à tous les modèles tabulaires (module `ml/prep.py`) :
 
 - **24 features** : 3 réglages + 21 capteurs.
 - **Split par machine** (80/20) pour éviter la fuite entre train et validation.
-- **Normalisation `StandardScaler`** (ajustée sur le train) — **indispensable** ici : un
+- **Normalisation `StandardScaler`** (ajustée sur le train) - **indispensable** ici : un
   modèle linéaire est sensible à l'échelle des variables.
 - Cible RUL **bornée à 125 cycles** (clipping piecewise).
 

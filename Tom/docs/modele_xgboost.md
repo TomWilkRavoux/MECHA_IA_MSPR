@@ -1,4 +1,4 @@
-# Modèle — Gradient Boosting (XGBoost)
+# Modèle - Gradient Boosting (XGBoost)
 
 > Notebook d'entraînement : `notebooks/02_gradient_boosting_baseline.py`
 > Notebooks d'évaluation : `notebooks/analyse/eval_xgb_classifier.py`,
@@ -21,7 +21,7 @@ Il constitue le second modèle de ML, comparé à la RF (notebook 01) et au LSTM
 ## 2. Données en entrée
 
 Identiques aux autres modèles tabulaires (`ml/prep.py`) : 24 features, **split par
-machine** (80/20 — la validation sert aussi à l'**early stopping**), normalisation
+machine** (80/20 - la validation sert aussi à l'**early stopping**), normalisation
 `StandardScaler`, RUL borné à 125.
 
 ## 3. Construction technique

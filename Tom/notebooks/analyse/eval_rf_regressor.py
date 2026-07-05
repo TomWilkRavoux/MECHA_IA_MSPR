@@ -24,7 +24,7 @@ def _():
 @app.cell
 def _(mo):
     mo.md(r"""
-    # Évaluation — Random Forest (régression `RUL`)
+    # Évaluation - Random Forest (régression `RUL`)
 
     Modèle rechargé : `models/rf_regressor.joblib` (entraîné dans `01_random_forest.py`).
     Prédiction du RUL sur le dernier cycle de chaque machine test, comparée à la
@@ -47,26 +47,31 @@ def _(joblib, prep):
 @app.cell
 def _(metrics, mo, pred, y):
     m = metrics.regression_metrics(y, pred)
-    mo.md("## Métriques (test)\n\n" + "\n".join(f"- **{k}** : {v:.2f}" for k, v in m.items()))
+    mo.md(
+        "## Métriques (test)\n\n"
+        + "\n".join(f"- **{k}** : {v:.2f}" for k, v in m.items())
+    )
     return (m,)
 
 
 @app.cell
 def _(metrics, pred, y):
-    metrics.plot_rul_scatter(y, pred, title="RF — RUL prédit vs réel (test)")
+    metrics.plot_rul_scatter(y, pred, title="RF - RUL prédit vs réel (test)")
     return
 
 
 @app.cell
 def _(metrics, pred, y):
-    metrics.plot_error_hist(y, pred, title="RF — Distribution de l'erreur de RUL")
+    metrics.plot_error_hist(y, pred, title="RF - Distribution de l'erreur de RUL")
     return
 
 
 @app.cell
 def _(metrics, model, prep):
     metrics.plot_feature_importance(
-        prep.FEATURES, model.feature_importances_, title="RF — Importance des variables (RUL)"
+        prep.FEATURES,
+        model.feature_importances_,
+        title="RF - Importance des variables (RUL)",
     )
     return
 
@@ -75,10 +80,10 @@ def _(metrics, model, prep):
 def _(m, mo):
     mo.md(f"""
     ## Conclusion
-    - **MAE = {m['MAE']:.1f} cycles** : erreur moyenne lisible par la maintenance.
-    - **RMSE = {m['RMSE']:.1f}** : pénalise les grosses erreurs.
-    - **R² = {m['R2']:.2f}** : part de variance expliquée.
-    - **Score NASA = {m['NASA']:.0f}** (plus bas = mieux) : pénalise les prédictions
+    - **MAE = {m["MAE"]:.1f} cycles** : erreur moyenne lisible par la maintenance.
+    - **RMSE = {m["RMSE"]:.1f}** : pénalise les grosses erreurs.
+    - **R² = {m["R2"]:.2f}** : part de variance expliquée.
+    - **Score NASA = {m["NASA"]:.0f}** (plus bas = mieux) : pénalise les prédictions
       **en retard** (RUL surestimé = panne détectée trop tard).
     """)
     return

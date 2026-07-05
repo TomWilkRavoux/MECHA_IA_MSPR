@@ -38,14 +38,14 @@ def _():
 def _(mo):
     mo.md(
         r"""
-        # 02 — Baseline (régression simple) + Gradient Boosting (XGBoost)
+        # 02 - Baseline (régression simple) + Gradient Boosting (XGBoost)
 
         Deux modèles, comparés à la Random Forest du notebook 01 :
 
-        1. **Baseline exigée par le CDC** — `LogisticRegression` (classification) et
+        1. **Baseline exigée par le CDC** - `LogisticRegression` (classification) et
            `LinearRegression` (RUL). Modèles linéaires simples : point de comparaison
            minimal, très interprétables mais incapables de capturer les non-linéarités.
-        2. **XGBoost** — Gradient Boosting d'arbres, état de l'art sur données
+        2. **XGBoost** - Gradient Boosting d'arbres, état de l'art sur données
            tabulaires. Construit les arbres séquentiellement pour corriger les erreurs
            résiduelles ; attendu au-dessus de la Random Forest.
 
@@ -75,7 +75,9 @@ def _(mo, np, prep):
 
     # Déséquilibre -> scale_pos_weight pour XGBoost
     pos_weight = float((y_tr_clf == 0).sum() / (y_tr_clf == 1).sum())
-    mo.md(f"`scale_pos_weight` (XGBoost) = **{pos_weight:.2f}** (ratio négatifs/positifs).")
+    mo.md(
+        f"`scale_pos_weight` (XGBoost) = **{pos_weight:.2f}** (ratio négatifs/positifs)."
+    )
     return (
         pos_weight,
         xs_tr_clf,
@@ -101,9 +103,9 @@ def _(
     y_tr_rul,
 ):
     # --- Baseline linéaire (CDC) ---
-    lr_clf = LogisticRegression(
-        max_iter=1000, class_weight="balanced"
-    ).fit(xs_tr_clf, y_tr_clf)
+    lr_clf = LogisticRegression(max_iter=1000, class_weight="balanced").fit(
+        xs_tr_clf, y_tr_clf
+    )
     lr_reg = LinearRegression().fit(xs_tr_rul, y_tr_rul)
     joblib.dump(lr_clf, prep.MODELS_DIR / "baseline_logreg.joblib")
     joblib.dump(lr_reg, prep.MODELS_DIR / "baseline_linreg.joblib")
@@ -162,7 +164,7 @@ def _(
 @app.cell
 def _(mo, xgb_clf, xgb_reg):
     mo.md(
-        f"**XGBoost — arbres retenus (early stopping)** : classif "
+        f"**XGBoost - arbres retenus (early stopping)** : classif "
         f"{xgb_clf.best_iteration + 1} · RUL {xgb_reg.best_iteration + 1}."
     )
     return
@@ -197,10 +199,10 @@ def _(lr_clf, lr_reg, metrics, prep, xgb_clf, xgb_reg):
 def _(m_base_clf, m_base_rul, m_xgb_clf, m_xgb_rul, metrics, mo):
     table = metrics.format_metrics_table(
         {
-            "Baseline — classif": m_base_clf,
-            "XGBoost — classif": m_xgb_clf,
-            "Baseline — RUL": m_base_rul,
-            "XGBoost — RUL": m_xgb_rul,
+            "Baseline - classif": m_base_clf,
+            "XGBoost - classif": m_xgb_clf,
+            "Baseline - RUL": m_base_rul,
+            "XGBoost - RUL": m_xgb_rul,
         }
     )
     mo.md("### Résultats (test)\n\n" + table)
@@ -210,7 +212,9 @@ def _(m_base_clf, m_base_rul, m_xgb_clf, m_xgb_rul, metrics, mo):
 @app.cell
 def _(metrics, prep, xgb_clf):
     fig_imp = metrics.plot_feature_importance(
-        prep.FEATURES, xgb_clf.feature_importances_, title="XGBoost — Importance des variables (classif)"
+        prep.FEATURES,
+        xgb_clf.feature_importances_,
+        title="XGBoost - Importance des variables (classif)",
     )
     metrics.save_fig(fig_imp, "xgb_importance.png")
     fig_imp
@@ -220,7 +224,7 @@ def _(metrics, prep, xgb_clf):
 @app.cell
 def _(metrics, xgb_reg, xt, y_rul):
     fig_sc = metrics.plot_rul_scatter(
-        y_rul, xgb_reg.predict(xt), title="XGBoost — RUL prédit vs réel (test)"
+        y_rul, xgb_reg.predict(xt), title="XGBoost - RUL prédit vs réel (test)"
     )
     metrics.save_fig(fig_sc, "xgb_rul_scatter.png")
     fig_sc
@@ -231,14 +235,14 @@ def _(metrics, xgb_reg, xt, y_rul):
 def _(m_base_clf, m_base_rul, m_xgb_clf, m_xgb_rul, mo):
     mo.md(
         f"""
-        ### Conclusion — comparaison
-        - **Classification** : XGBoost (F1 = {m_xgb_clf['f1']:.2f}, AUC =
-          {m_xgb_clf.get('roc_auc', float('nan')):.2f}) contre la baseline logistique
-          (F1 = {m_base_clf['f1']:.2f}). L'écart mesure l'apport des non-linéarités et
+        ### Conclusion - comparaison
+        - **Classification** : XGBoost (F1 = {m_xgb_clf["f1"]:.2f}, AUC =
+          {m_xgb_clf.get("roc_auc", float("nan")):.2f}) contre la baseline logistique
+          (F1 = {m_base_clf["f1"]:.2f}). L'écart mesure l'apport des non-linéarités et
           interactions entre capteurs que le modèle linéaire ne capte pas.
-        - **RUL** : XGBoost (RMSE = {m_xgb_rul['RMSE']:.1f}, score NASA =
-          {m_xgb_rul['NASA']:.0f}) contre la régression linéaire (RMSE =
-          {m_base_rul['RMSE']:.1f}). La baseline pose le plancher de performance ;
+        - **RUL** : XGBoost (RMSE = {m_xgb_rul["RMSE"]:.1f}, score NASA =
+          {m_xgb_rul["NASA"]:.0f}) contre la régression linéaire (RMSE =
+          {m_base_rul["RMSE"]:.1f}). La baseline pose le plancher de performance ;
           le boosting réduit nettement l'erreur.
         - À reporter dans le **tableau de synthèse final** face à la Random Forest (01)
           et au LSTM (03).
