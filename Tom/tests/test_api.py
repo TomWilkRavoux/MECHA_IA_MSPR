@@ -1,18 +1,25 @@
 """Tests d'intégration de l'API d'exposition du LSTM.
 
 Lancement (depuis Tom/) : uv run pytest
-Nécessite les modèles entraînés dans models/ (sinon les tests d'inférence sont
-ignorés). La validation du contrat d'entrée, elle, ne dépend pas des modèles.
+Les tests d'inférence utilisent un petit **fixture** (`tests/fixtures/`) et sont
+ignorés si les modèles sont absents de models/. La validation du contrat d'entrée,
+elle, ne dépend ni des modèles ni des données.
 """
 
 from __future__ import annotations
+
+from pathlib import Path
 
 import polars as pl
 import pytest
 from fastapi.testclient import TestClient
 
 from backend.api.main import app
-from ml.prep import FEATURES, MODELS_DIR, load_test
+from ml.prep import FEATURES, MODELS_DIR
+
+# Échantillon léger versionné (3 machines) : évite de dépendre du jeu de test complet
+# (20 Mo, non versionné) et permet aux tests d'inférence de tourner en CI.
+FIXTURE = Path(__file__).parent / "fixtures" / "mecha_test_sample.csv"
 
 _MODELS_PRESENT = all(
     (MODELS_DIR / f).exists()
@@ -25,6 +32,11 @@ needs_models = pytest.mark.skipif(not _MODELS_PRESENT, reason="modèles LSTM abs
 def client():
     with TestClient(app) as c:
         yield c
+
+
+@pytest.fixture(scope="module")
+def sample() -> pl.DataFrame:
+    return pl.read_csv(FIXTURE)
 
 
 def _cycles_for(df: pl.DataFrame, machine_id) -> list[dict]:
@@ -67,10 +79,9 @@ def test_batch_empty_returns_422(client):
 
 
 @needs_models
-def test_predict_contract(client):
-    test = load_test()
-    mid = test["machine_id"][0]
-    r = client.post("/predict", json={"machine_id": str(mid), "cycles": _cycles_for(test, mid)})
+def test_predict_contract(client, sample):
+    mid = sample["machine_id"][0]
+    r = client.post("/predict", json={"machine_id": str(mid), "cycles": _cycles_for(sample, mid)})
     assert r.status_code == 200
     body = r.json()
     assert 0.0 <= body["risk_probability"] <= 1.0
@@ -81,20 +92,18 @@ def test_predict_contract(client):
 
 
 @needs_models
-def test_batch(client):
-    test = load_test()
-    ids = test["machine_id"].unique().to_list()[:3]
-    machines = [{"machine_id": str(m), "cycles": _cycles_for(test, m)} for m in ids]
+def test_batch(client, sample):
+    ids = sample["machine_id"].unique().to_list()[:3]
+    machines = [{"machine_id": str(m), "cycles": _cycles_for(sample, m)} for m in ids]
     r = client.post("/predict/batch", json={"machines": machines})
     assert r.status_code == 200
     assert len(r.json()["results"]) == 3
 
 
 @needs_models
-def test_trajectory_contract(client):
-    test = load_test()
-    mid = test["machine_id"][0]
-    cycles = _cycles_for(test, mid)
+def test_trajectory_contract(client, sample):
+    mid = sample["machine_id"][0]
+    cycles = _cycles_for(sample, mid)
     r = client.post("/predict/trajectory", json={"machine_id": str(mid), "cycles": cycles})
     assert r.status_code == 200
     points = r.json()["points"]
