@@ -42,8 +42,27 @@ def test_health(client):
     assert 0 < body["critical_rul"] <= body["risk_threshold"]
 
 
+def test_features(client):
+    body = client.get("/features").json()
+    assert body["seq_len"] == 30
+    assert body["features"] == FEATURES
+    assert len(body["features"]) == 24
+
+
 def test_missing_feature_returns_422(client):
     r = client.post("/predict", json={"machine_id": "X", "cycles": [{"values": {"T2": 1.0}}]})
+    assert r.status_code == 422
+
+
+def test_empty_cycles_returns_422(client):
+    # `cycles` a min_length=1 -> une liste vide est rejetée par le contrat Pydantic.
+    r = client.post("/predict", json={"machine_id": "X", "cycles": []})
+    assert r.status_code == 422
+
+
+def test_batch_empty_returns_422(client):
+    # `machines` a min_length=1 -> un lot vide est rejeté.
+    r = client.post("/predict/batch", json={"machines": []})
     assert r.status_code == 422
 
 

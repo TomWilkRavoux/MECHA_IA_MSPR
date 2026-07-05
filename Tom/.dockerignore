@@ -1,0 +1,23 @@
+# Contexte de build minimal (les COPY ne prennent que le nécessaire ;
+# on exclut ici le volumineux pour accélérer l'envoi au démon Docker).
+
+# Environnements / caches
+.venv/
+**/__pycache__/
+.pytest_cache/
+__marimo__/
+*.pyc
+
+# Données montées au runtime (volumes) — inutiles dans le contexte de build
+models/
+assets/
+
+# Livrables / exploration non nécessaires au runtime
+reports/
+notebooks/
+preAnalyse/
+*.pdf
+
+# Divers
+.python-version
+uv.lock

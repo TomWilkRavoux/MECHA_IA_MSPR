@@ -1,0 +1,24 @@
+# API de maintenance prédictive MECHA (FastAPI + LSTM).
+# L'image ne contient que le CODE : les artefacts modèles (scaler + 2 têtes LSTM) sont
+# montés au runtime via docker-compose (non versionnés). torch est installé en variante
+# CPU (le GPU cu128 du dev n'est pas requis pour servir).
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# curl pour le healthcheck docker-compose
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# torch CPU d'abord (index dédié), puis les dépendances runtime de l'API
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu \
+    && pip install --no-cache-dir \
+        "fastapi>=0.139.0" "uvicorn[standard]>=0.50.0" \
+        "scikit-learn>=1.9.0" "polars>=1.42.1" numpy joblib
+
+# Code applicatif (les modèles arrivent via un volume monté sur /app/models)
+COPY ml/ ./ml/
+COPY backend/ ./backend/
+
+EXPOSE 8000
+CMD ["uvicorn", "backend.api.main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -117,5 +117,6 @@ Ce script **fusionne** les 4 sous-jeux en fichiers exploitables, au vocabulaire 
 - **Limites connues** : capteurs constants sur certains régimes, volumétrie inégale entre
   sous-jeux, RUL borné à 125 cycles pour l'apprentissage (voir docs modèles).
 
-> Pour le détail des colonnes, un **dictionnaire de données par colonne** reste à produire
-> (item ouvert de la feuille de route).
+> Le détail **par colonne** (type, unité, description, domaine) est documenté dans le
+> [dictionnaire de données](dictionnaire_donnees.md), dont la cohérence avec le schéma réel
+> est vérifiée automatiquement (`tests/test_data_dictionary.py`).

@@ -1,0 +1,20 @@
+# Dashboard d'exploitation MECHA (Streamlit).
+# Découplé de l'IA : n'embarque ni torch ni les modèles — il consomme l'API REST.
+# Le jeu de démonstration (assets/) est monté au runtime via docker-compose.
+FROM python:3.12-slim
+
+WORKDIR /app
+
+RUN pip install --no-cache-dir \
+    "streamlit>=1.58.0" altair pandas "requests>=2.28.1"
+
+# Thème (.streamlit/config.toml) et code front (les données de démo arrivent via un volume)
+COPY .streamlit/ ./.streamlit/
+COPY frontend/ ./frontend/
+
+# URL de l'API (surchargée par docker-compose : http://backend:8000)
+ENV MECHA_API_URL=http://localhost:8000
+
+EXPOSE 8501
+CMD ["streamlit", "run", "frontend/dashboard.py", \
+     "--server.address", "0.0.0.0", "--server.port", "8501", "--server.headless", "true"]
