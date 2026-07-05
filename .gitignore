@@ -1,18 +1,31 @@
 .env
 .venv/
 __marimo__/
+__pycache__/
+.claude/
 
 reports/
 assets/
+*.pdf
 
 #Model
 *joblib
 
-Samuel/.ipynb_checkpoints/
-Samuel/.ipynb_checkpoints/*
-Samuel/.venv/
+Samuel/Samuel-V1/.ipynb_checkpoints/
+Samuel/Samuel-V1/.ipynb_checkpoints/*
+Samuel/Samuel-V1/.venv/
 
-Samuel/Data/CMaps/
-Samuel/Data/CMaps/*
-Samuel/Data/csv/
-Samuel/Data/csv/*
+Samuel/Samuel-V1/Data/CMaps/
+Samuel/Samuel-V1/Data/CMaps/*
+Samuel/Samuel-V1/Data/csv/
+Samuel/Samuel-V1/Data/csv/*
+
+Samuel/Samuel-V2/.ipynb_checkpoints/
+Samuel/Samuel-V2/.ipynb_checkpoints/*
+Samuel/Samuel-V2/.venv/
+Samuel/Samuel-V2/Data
+Samuel/Samuel-V2/Data/*
+Samuel/Samuel-V2/resultats
+Samuel/Samuel-V2/resultats/*
+
+*.pt
