@@ -3,6 +3,7 @@
 __marimo__/
 __pycache__/
 .claude/
+.pytest_cache/
 
 reports/
 assets/
