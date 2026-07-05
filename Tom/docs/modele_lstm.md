@@ -1,4 +1,4 @@
-# Modèle — LSTM (Deep Learning, PyTorch / GPU)
+# Modèle - LSTM (Deep Learning, PyTorch / GPU)
 
 > Notebook d'entraînement : `notebooks/03_lstm.py`
 > Notebooks d'évaluation : `notebooks/analyse/eval_lstm_classifier.py`,
@@ -10,21 +10,21 @@
 
 Tous les modèles précédents (baseline, RF, XGBoost) traitent **chaque cycle isolément** :
 ils ignorent que la donnée est une **série temporelle**. Or la défaillance est un
-**processus progressif** — les capteurs dérivent lentement avant la panne.
+**processus progressif** - les capteurs dérivent lentement avant la panne.
 
 Le **LSTM** (Long Short-Term Memory) est un réseau récurrent conçu pour les séquences : il
 **mémorise la tendance** sur une fenêtre de cycles et apprend la dynamique de dégradation.
 C'est l'**approche de référence académique sur C-MAPSS**. On attend un gain surtout sur le
 **RUL**, où la temporalité est déterminante.
 
-## 2. Données en entrée — fenêtres glissantes
+## 2. Données en entrée - fenêtres glissantes
 
 Spécifique au LSTM (`ml/prep.make_windows`) :
 
 - Pour chaque machine, on découpe la trajectoire en **fenêtres glissantes de `SEQ_LEN = 30`
   cycles** ; la cible (`at_risk` ou `RUL`) est celle du **dernier cycle** de la fenêtre.
 - Les machines trop courtes sont **left-paddées** (répétition du premier cycle).
-- Features **normalisées** (`StandardScaler` partagé) — essentiel pour la convergence d'un
+- Features **normalisées** (`StandardScaler` partagé) - essentiel pour la convergence d'un
   réseau de neurones.
 - En test : **une fenêtre par machine** (les `SEQ_LEN` derniers cycles observés), via
   `make_test_windows`.
@@ -53,7 +53,7 @@ Deux modèles séparés partagent cette architecture :
 | Tâche | Sortie / Perte | Réglages |
 |---|---|---|
 | Classification `at_risk` | logit + `BCEWithLogitsLoss(pos_weight)` | `pos_weight` = ratio négatifs/positifs (déséquilibre) ; sigmoïde appliquée à l'évaluation. |
-| Régression `RUL` | linéaire + `MSELoss` | — |
+| Régression `RUL` | linéaire + `MSELoss` | - |
 
 ### Entraînement
 

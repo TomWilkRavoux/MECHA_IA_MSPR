@@ -24,7 +24,7 @@ def _():
 @app.cell
 def _(mo):
     mo.md(r"""
-    # Évaluation — XGBoost (classification `at_risk`)
+    # Évaluation - XGBoost (classification `at_risk`)
 
     Modèle rechargé : `models/xgb_classifier.joblib` (entraîné dans
     `02_gradient_boosting_baseline.py`). Gradient Boosting d'arbres avec
@@ -48,32 +48,37 @@ def _(joblib, prep):
 @app.cell
 def _(metrics, mo, pred, proba, y):
     m = metrics.classification_metrics(y, pred, proba)
-    mo.md("## Métriques (test)\n\n" + "\n".join(f"- **{k}** : {v:.3f}" for k, v in m.items()))
+    mo.md(
+        "## Métriques (test)\n\n"
+        + "\n".join(f"- **{k}** : {v:.3f}" for k, v in m.items())
+    )
     return (m,)
 
 
 @app.cell
 def _(metrics, pred, y):
-    metrics.plot_confusion(y, pred, title="XGBoost — Matrice de confusion (at_risk)")
+    metrics.plot_confusion(y, pred, title="XGBoost - Matrice de confusion (at_risk)")
     return
 
 
 @app.cell
 def _(metrics, proba, y):
-    metrics.plot_roc(y, proba, title="XGBoost — Courbe ROC (at_risk)")
+    metrics.plot_roc(y, proba, title="XGBoost - Courbe ROC (at_risk)")
     return
 
 
 @app.cell
 def _(metrics, proba, y):
-    metrics.plot_pr(y, proba, title="XGBoost — Précision/Rappel (at_risk)")
+    metrics.plot_pr(y, proba, title="XGBoost - Précision/Rappel (at_risk)")
     return
 
 
 @app.cell
 def _(metrics, model, prep):
     metrics.plot_feature_importance(
-        prep.FEATURES, model.feature_importances_, title="XGBoost — Importance des variables"
+        prep.FEATURES,
+        model.feature_importances_,
+        title="XGBoost - Importance des variables",
     )
     return
 
@@ -82,8 +87,8 @@ def _(metrics, model, prep):
 def _(m, mo):
     mo.md(f"""
     ## Conclusion
-    - **Recall = {m['recall']:.2f}**, **Precision = {m['precision']:.2f}**,
-      **F1 = {m['f1']:.2f}**, **ROC-AUC = {m.get('roc_auc', float('nan')):.2f}**.
+    - **Recall = {m["recall"]:.2f}**, **Precision = {m["precision"]:.2f}**,
+      **F1 = {m["f1"]:.2f}**, **ROC-AUC = {m.get("roc_auc", float("nan")):.2f}**.
     - XGBoost pousse en général le **recall** (moins de pannes manquées) grâce au
       boosting séquentiel. À comparer à la Random Forest et au LSTM.
     """)

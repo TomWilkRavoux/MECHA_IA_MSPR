@@ -31,7 +31,7 @@ def _(DEVICE, mo, torch):
     gpu = torch.cuda.get_device_name(0) if torch.cuda.is_available() else "aucun"
     mo.md(
         f"""
-        # 03 — Deep Learning : LSTM sur fenêtres glissantes (PyTorch / GPU)
+        # 03 - Deep Learning : LSTM sur fenêtres glissantes (PyTorch / GPU)
 
         **Pourquoi un LSTM ?** Contrairement aux modèles tabulaires (RF, XGBoost) qui
         traitent chaque cycle isolément, le LSTM exploite la **dynamique temporelle** de
@@ -39,7 +39,7 @@ def _(DEVICE, mo, torch):
         découpée en **fenêtres glissantes** de `SEQ_LEN` cycles et le réseau apprend les
         tendances menant à la défaillance.
 
-        **Backend** : PyTorch (build CUDA 12.8) — device détecté : **`{DEVICE}`** ({gpu}).
+        **Backend** : PyTorch (build CUDA 12.8) - device détecté : **`{DEVICE}`** ({gpu}).
 
         Deux modèles séparés : **classification** (`at_risk`, sortie logit + sigmoïde) et
         **régression** (`RUL`, sortie linéaire).
@@ -66,7 +66,7 @@ def _(mo, prep):
     yw_tr_rul, yw_va_rul = prep.clip_rul(yw_tr_rul), prep.clip_rul(yw_va_rul)
 
     mo.md(
-        f"Fenêtres (seq_len={prep.SEQ_LEN}) — classif train {xw_tr_clf.shape} · "
+        f"Fenêtres (seq_len={prep.SEQ_LEN}) - classif train {xw_tr_clf.shape} · "
         f"RUL train {xw_tr_rul.shape}."
     )
     return (
@@ -101,7 +101,11 @@ def _(DEVICE, np, torch):
         train = opt is not None
         model.train(train)
         n = len(x)
-        idx = torch.randperm(n, device=x.device) if train else torch.arange(n, device=x.device)
+        idx = (
+            torch.randperm(n, device=x.device)
+            if train
+            else torch.arange(n, device=x.device)
+        )
         total = 0.0
         with torch.set_grad_enabled(train):
             for i in range(0, n, batch):
@@ -115,7 +119,9 @@ def _(DEVICE, np, torch):
                 total += loss.item() * len(b)
         return total / n
 
-    def train_model(model, xtr, ytr, xva, yva, loss_fn, epochs=30, patience=5, batch=512):
+    def train_model(
+        model, xtr, ytr, xva, yva, loss_fn, epochs=30, patience=5, batch=512
+    ):
         model.to(DEVICE)
         xtr, ytr = _to_gpu(xtr), _to_gpu(ytr)
         xva, yva = _to_gpu(xva), _to_gpu(yva)
@@ -128,7 +134,11 @@ def _(DEVICE, np, torch):
             hist["loss"].append(tr_loss)
             hist["val_loss"].append(va_loss)
             if va_loss < best:
-                best, best_state, wait = va_loss, {k: v.detach().clone() for k, v in model.state_dict().items()}, 0
+                best, best_state, wait = (
+                    va_loss,
+                    {k: v.detach().clone() for k, v in model.state_dict().items()},
+                    0,
+                )
             else:
                 wait += 1
                 if wait >= patience:
@@ -157,7 +167,9 @@ def _(
     pos_w = float((yw_tr_clf == 0).sum() / (yw_tr_clf == 1).sum())
     loss_clf = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(pos_w))
     lstm_clf = LSTMNet(n_features)
-    hist_clf = train_model(lstm_clf, xw_tr_clf, yw_tr_clf, xw_va_clf, yw_va_clf, loss_clf)
+    hist_clf = train_model(
+        lstm_clf, xw_tr_clf, yw_tr_clf, xw_va_clf, yw_va_clf, loss_clf
+    )
     torch.save(lstm_clf.state_dict(), prep.MODELS_DIR / "lstm_classifier.pt")
     return hist_clf, lstm_clf
 
@@ -177,14 +189,16 @@ def _(
 ):
     # --- Entraînement LSTM régression RUL (MSE) ---
     lstm_reg = LSTMNet(n_features)
-    hist_reg = train_model(lstm_reg, xw_tr_rul, yw_tr_rul, xw_va_rul, yw_va_rul, nn.MSELoss())
+    hist_reg = train_model(
+        lstm_reg, xw_tr_rul, yw_tr_rul, xw_va_rul, yw_va_rul, nn.MSELoss()
+    )
     torch.save(lstm_reg.state_dict(), prep.MODELS_DIR / "lstm_regressor.pt")
     return hist_reg, lstm_reg
 
 
 @app.cell
 def _(hist_clf, metrics):
-    fig_hc = metrics.plot_history(hist_clf, title="LSTM classif — apprentissage (BCE)")
+    fig_hc = metrics.plot_history(hist_clf, title="LSTM classif - apprentissage (BCE)")
     metrics.save_fig(fig_hc, "lstm_history_clf.png")
     fig_hc
     return
@@ -192,7 +206,7 @@ def _(hist_clf, metrics):
 
 @app.cell
 def _(hist_reg, metrics):
-    fig_hr = metrics.plot_history(hist_reg, title="LSTM RUL — apprentissage (MSE)")
+    fig_hr = metrics.plot_history(hist_reg, title="LSTM RUL - apprentissage (MSE)")
     metrics.save_fig(fig_hr, "lstm_history_rul.png")
     fig_hr
     return
@@ -230,7 +244,7 @@ def _(DEVICE, lstm_clf, lstm_reg, metrics, np, prep, scaler, torch):
 @app.cell
 def _(m_lstm_clf, m_lstm_rul, metrics, mo):
     table = metrics.format_metrics_table(
-        {"LSTM — classif (at_risk)": m_lstm_clf, "LSTM — RUL (test)": m_lstm_rul}
+        {"LSTM - classif (at_risk)": m_lstm_clf, "LSTM - RUL (test)": m_lstm_rul}
     )
     mo.md("### Résultats LSTM (test)\n\n" + table)
     return
@@ -238,7 +252,9 @@ def _(m_lstm_clf, m_lstm_rul, metrics, mo):
 
 @app.cell
 def _(metrics, pred_rul, y_rul_true):
-    fig_sc = metrics.plot_rul_scatter(y_rul_true, pred_rul, title="LSTM — RUL prédit vs réel (test)")
+    fig_sc = metrics.plot_rul_scatter(
+        y_rul_true, pred_rul, title="LSTM - RUL prédit vs réel (test)"
+    )
     metrics.save_fig(fig_sc, "lstm_rul_scatter.png")
     fig_sc
     return
@@ -248,11 +264,11 @@ def _(metrics, pred_rul, y_rul_true):
 def _(m_lstm_clf, m_lstm_rul, mo):
     mo.md(
         f"""
-        ### Conclusion — LSTM
-        - **Classification** : F1 = {m_lstm_clf['f1']:.2f}, recall =
-          {m_lstm_clf['recall']:.2f}, AUC = {m_lstm_clf.get('roc_auc', float('nan')):.2f}.
-        - **RUL** : RMSE = {m_lstm_rul['RMSE']:.1f}, MAE = {m_lstm_rul['MAE']:.1f},
-          R² = {m_lstm_rul['R2']:.2f}, score NASA = {m_lstm_rul['NASA']:.0f}.
+        ### Conclusion - LSTM
+        - **Classification** : F1 = {m_lstm_clf["f1"]:.2f}, recall =
+          {m_lstm_clf["recall"]:.2f}, AUC = {m_lstm_clf.get("roc_auc", float("nan")):.2f}.
+        - **RUL** : RMSE = {m_lstm_rul["RMSE"]:.1f}, MAE = {m_lstm_rul["MAE"]:.1f},
+          R² = {m_lstm_rul["R2"]:.2f}, score NASA = {m_lstm_rul["NASA"]:.0f}.
         - Les **courbes d'apprentissage** (loss/val_loss) permettent de vérifier
           l'absence de sur-apprentissage : l'early stopping restaure les meilleurs poids.
         - Le LSTM exploite la temporalité que les modèles tabulaires ignorent : gain

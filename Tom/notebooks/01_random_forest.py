@@ -28,12 +28,12 @@ def _():
 def _(mo):
     mo.md(
         r"""
-        # 01 — Random Forest (cœur de la solution)
+        # 01 - Random Forest (cœur de la solution)
 
         **Pourquoi la Random Forest ?** Le CDC la désigne explicitement comme cœur de
         la solution : ensemble d'arbres robuste au bruit et aux valeurs manquantes,
         peu sensible à l'échelle des variables, et surtout **interprétable** via
-        l'importance des variables — atout majeur pour la maintenance (identifier les
+        l'importance des variables - atout majeur pour la maintenance (identifier les
         capteurs prédictifs). Elle sert de **référence** pour les notebooks suivants.
 
         Ce notebook traite les **deux tâches** imposées :
@@ -54,7 +54,7 @@ def _(mo, prep):
     tr_rul, va_rul = prep.split_by_machine(df_rul, val_frac=0.2, seed=42)
 
     mo.md(
-        f"**Données** — classif : {df_clf.height:,} lignes · "
+        f"**Données** - classif : {df_clf.height:,} lignes · "
         f"{df_clf['machine_id'].n_unique()} machines "
         f"(train {tr_clf['machine_id'].n_unique()} / val {va_clf['machine_id'].n_unique()}). "
         f"Taux de positifs `at_risk` : {100 * df_clf['at_risk'].mean():.1f} %."
@@ -112,7 +112,7 @@ def _(
 
 @app.cell
 def _(mo):
-    mo.md(r"## Évaluation — Classification `at_risk`")
+    mo.md(r"## Évaluation - Classification `at_risk`")
     return
 
 
@@ -125,15 +125,18 @@ def _(metrics, mo, prep, rf_clf, scaler, va_clf):
     pred_clf = rf_clf.predict(x_va_clf_s)
 
     m_clf = metrics.classification_metrics(y_va_clf, pred_clf, proba_clf)
-    mo.md("**Métriques classification (validation)**\n\n" + "\n".join(
-        f"- **{k}** : {v:.3f}" for k, v in m_clf.items()
-    ))
+    mo.md(
+        "**Métriques classification (validation)**\n\n"
+        + "\n".join(f"- **{k}** : {v:.3f}" for k, v in m_clf.items())
+    )
     return m_clf, pred_clf, proba_clf, y_va_clf
 
 
 @app.cell
 def _(metrics, pred_clf, proba_clf, y_va_clf):
-    fig_cm = metrics.plot_confusion(y_va_clf, pred_clf, title="RF — Confusion (at_risk)")
+    fig_cm = metrics.plot_confusion(
+        y_va_clf, pred_clf, title="RF - Confusion (at_risk)"
+    )
     metrics.save_fig(fig_cm, "rf_confusion.png")
     fig_cm
     return
@@ -141,7 +144,7 @@ def _(metrics, pred_clf, proba_clf, y_va_clf):
 
 @app.cell
 def _(metrics, proba_clf, y_va_clf):
-    fig_roc = metrics.plot_roc(y_va_clf, proba_clf, title="RF — ROC (at_risk)")
+    fig_roc = metrics.plot_roc(y_va_clf, proba_clf, title="RF - ROC (at_risk)")
     metrics.save_fig(fig_roc, "rf_roc.png")
     fig_roc
     return
@@ -149,7 +152,9 @@ def _(metrics, proba_clf, y_va_clf):
 
 @app.cell
 def _(metrics, proba_clf, y_va_clf):
-    fig_pr = metrics.plot_pr(y_va_clf, proba_clf, title="RF — Précision/Rappel (at_risk)")
+    fig_pr = metrics.plot_pr(
+        y_va_clf, proba_clf, title="RF - Précision/Rappel (at_risk)"
+    )
     metrics.save_fig(fig_pr, "rf_pr.png")
     fig_pr
     return
@@ -158,7 +163,9 @@ def _(metrics, proba_clf, y_va_clf):
 @app.cell
 def _(metrics, prep, rf_clf):
     fig_imp = metrics.plot_feature_importance(
-        prep.FEATURES, rf_clf.feature_importances_, title="RF — Importance des variables (classif)"
+        prep.FEATURES,
+        rf_clf.feature_importances_,
+        title="RF - Importance des variables (classif)",
     )
     metrics.save_fig(fig_imp, "rf_importance.png")
     fig_imp
@@ -169,13 +176,13 @@ def _(metrics, prep, rf_clf):
 def _(m_clf, mo):
     mo.md(
         f"""
-        ### Conclusion — classification
-        - **Recall = {m_clf['recall']:.2f}** : part des machines réellement à risque
-          correctement détectées. C'est la métrique **critique** pour MECHA — un faux
+        ### Conclusion - classification
+        - **Recall = {m_clf["recall"]:.2f}** : part des machines réellement à risque
+          correctement détectées. C'est la métrique **critique** pour MECHA - un faux
           négatif = panne manquée (arrêt non planifié, coûteux).
-        - **Precision = {m_clf['precision']:.2f}** : quand le modèle alerte, fiabilité de
+        - **Precision = {m_clf["precision"]:.2f}** : quand le modèle alerte, fiabilité de
           l'alerte. Trop bas ⇒ maintenance inutile.
-        - **F1 = {m_clf['f1']:.2f}** synthétise les deux ; **ROC-AUC = {m_clf.get('roc_auc', float('nan')):.2f}**
+        - **F1 = {m_clf["f1"]:.2f}** synthétise les deux ; **ROC-AUC = {m_clf.get("roc_auc", float("nan")):.2f}**
           mesure la séparabilité globale, indépendamment du seuil.
         - Le déséquilibre (~14 % de positifs) rend l'**accuracy** peu informative : on
           privilégie F1 / recall.
@@ -186,7 +193,7 @@ def _(m_clf, mo):
 
 @app.cell
 def _(mo):
-    mo.md(r"## Évaluation — Régression `RUL`")
+    mo.md(r"## Évaluation - Régression `RUL`")
     return
 
 
@@ -205,9 +212,9 @@ def _(metrics, mo, prep, rf_reg, scaler, va_rul):
     m_rul_test = metrics.regression_metrics(y_test, pred_test_rul)
 
     mo.md(
-        "**Régression RUL — validation** : "
+        "**Régression RUL - validation** : "
         + " · ".join(f"{k} {v:.2f}" for k, v in m_rul_val.items())
-        + "\n\n**Régression RUL — test officiel (dernier cycle)** : "
+        + "\n\n**Régression RUL - test officiel (dernier cycle)** : "
         + " · ".join(f"{k} {v:.2f}" for k, v in m_rul_test.items())
     )
     return m_rul_test, pred_test_rul, y_test
@@ -215,7 +222,9 @@ def _(metrics, mo, prep, rf_reg, scaler, va_rul):
 
 @app.cell
 def _(metrics, pred_test_rul, y_test):
-    fig_sc = metrics.plot_rul_scatter(y_test, pred_test_rul, title="RF — RUL prédit vs réel (test)")
+    fig_sc = metrics.plot_rul_scatter(
+        y_test, pred_test_rul, title="RF - RUL prédit vs réel (test)"
+    )
     metrics.save_fig(fig_sc, "rf_rul_scatter.png")
     fig_sc
     return
@@ -223,7 +232,9 @@ def _(metrics, pred_test_rul, y_test):
 
 @app.cell
 def _(metrics, pred_test_rul, y_test):
-    fig_err = metrics.plot_error_hist(y_test, pred_test_rul, title="RF — Erreur de RUL (test)")
+    fig_err = metrics.plot_error_hist(
+        y_test, pred_test_rul, title="RF - Erreur de RUL (test)"
+    )
     metrics.save_fig(fig_err, "rf_rul_error.png")
     fig_err
     return
@@ -233,12 +244,12 @@ def _(metrics, pred_test_rul, y_test):
 def _(m_rul_test, mo):
     mo.md(
         f"""
-        ### Conclusion — régression RUL
-        - **MAE = {m_rul_test['MAE']:.1f} cycles** : erreur moyenne en valeur absolue,
+        ### Conclusion - régression RUL
+        - **MAE = {m_rul_test["MAE"]:.1f} cycles** : erreur moyenne en valeur absolue,
           directement lisible par la maintenance (« ± X cycles »).
-        - **RMSE = {m_rul_test['RMSE']:.1f}** : pénalise davantage les grosses erreurs.
-        - **R² = {m_rul_test['R2']:.2f}** : part de variance expliquée.
-        - **Score NASA = {m_rul_test['NASA']:.0f}** (plus bas = mieux) : pénalise les
+        - **RMSE = {m_rul_test["RMSE"]:.1f}** : pénalise davantage les grosses erreurs.
+        - **R² = {m_rul_test["R2"]:.2f}** : part de variance expliquée.
+        - **Score NASA = {m_rul_test["NASA"]:.0f}** (plus bas = mieux) : pénalise les
           **retards** de prédiction (RUL surestimé = panne détectée trop tard). C'est
           l'indicateur le plus aligné sur le risque industriel.
 
@@ -252,7 +263,7 @@ def _(m_rul_test, mo):
 @app.cell
 def _(m_clf, m_rul_test, metrics, mo):
     table = metrics.format_metrics_table(
-        {"RF — classif (at_risk)": m_clf, "RF — RUL (test)": m_rul_test}
+        {"RF - classif (at_risk)": m_clf, "RF - RUL (test)": m_rul_test}
     )
     mo.md("### Récapitulatif Random Forest\n\n" + table)
     return

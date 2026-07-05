@@ -1,4 +1,4 @@
-# Documentation technique — Partie IA (MECHA / MSPR TPRE841)
+# Documentation technique - Partie IA (MECHA / MSPR TPRE841)
 
 Cette documentation explique **les données** et **les modèles** de la solution de
 maintenance prédictive. Elle complète `../plan.md` (feuille de route) et les notebooks
@@ -9,10 +9,17 @@ maintenance prédictive. Elle complète `../plan.md` (feuille de route) et les n
 | Document | Contenu |
 |---|---|
 | [`repartition_donnees.md`](repartition_donnees.md) | Origine du dataset (NASA C-MAPSS), **justification de la répartition** en usines / lignes (`analyseGlobal.py`), et **consolidation** au vocabulaire MECHA (`fusionDatasetFinal.py`). |
-| [`modele_baseline.md`](modele_baseline.md) | Baseline linéaire (régression logistique + linéaire) — plancher de performance exigé par le CDC. |
-| [`modele_random_forest.md`](modele_random_forest.md) | Random Forest — cœur de la solution (arbres, importances). |
-| [`modele_xgboost.md`](modele_xgboost.md) | Gradient Boosting (XGBoost) — état de l'art tabulaire. |
-| [`modele_lstm.md`](modele_lstm.md) | LSTM (Deep Learning, PyTorch/GPU) — exploitation de la temporalité. |
+| [`modele_baseline.md`](modele_baseline.md) | Baseline linéaire (régression logistique + linéaire) - plancher de performance exigé par le CDC. |
+| [`modele_random_forest.md`](modele_random_forest.md) | Random Forest - cœur de la solution (arbres, importances). |
+| [`modele_xgboost.md`](modele_xgboost.md) | Gradient Boosting (XGBoost) - état de l'art tabulaire. |
+| [`modele_lstm.md`](modele_lstm.md) | LSTM (Deep Learning, PyTorch/GPU) - exploitation de la temporalité. |
+
+### Exploitation applicative - dashboard
+
+| Document | Contenu |
+|---|---|
+| [`dashboard_technique.md`](dashboard_technique.md) | Architecture **frontend ↔ API découplée**, endpoints consommés, fenêtre glissante / calcul de trajectoire, structure du code, lancement, tests. |
+| [`dashboard_fonctionnel.md`](dashboard_fonctionnel.md) | **Guide utilisateur métier** : écrans, lecture des indicateurs, **justification du seuil 30**, règles d'alerte, limites d'usage. |
 
 ## Rappel des deux tâches
 

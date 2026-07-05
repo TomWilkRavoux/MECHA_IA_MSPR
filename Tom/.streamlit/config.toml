@@ -1,0 +1,17 @@
+# Thème du dashboard de maintenance prédictive MECHA.
+# Palette claire, professionnelle (accent bleu corporate). Voir aussi frontend/ui/style.py
+# pour la couche CSS de finition (cartes, onglets, pastilles de statut).
+
+[theme]
+base = "light"
+primaryColor = "#2a78d6"          # accent (boutons, focus, liens)
+backgroundColor = "#f5f5f5"       # plan de page
+secondaryBackgroundColor = "#f1efe9"  # barre latérale + champs
+textColor = "#12100c"             # encre principale
+linkColor = "#2a78d6"
+font = "sans serif"
+baseRadius = "medium"
+borderColor = "#e4e2da"
+
+[client]
+toolbarMode = "minimal"
