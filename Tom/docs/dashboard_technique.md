@@ -106,6 +106,8 @@ Les **seuils** (30 / 15 / 0.5 / 0.75) ne sont **pas codés en dur** : ils provie
 
 ## 5. Lancement
 
+### En local (développement)
+
 Depuis `Tom/`, backend d'abord :
 
 ```bash
@@ -116,9 +118,29 @@ uv run streamlit run frontend/dashboard.py        # http://localhost:8501
 L'URL de l'API est configurable dans la barre latérale (défaut `http://localhost:8000`,
 surchargée par la variable d'environnement `MECHA_API_URL`).
 
-## 6. Tests
+### Conteneurisé (Docker Compose)
 
-Tests d'intégration de l'API dans `tests/test_api.py` (`uv run pytest`) : contrat d'entrée
-(422 sur variable manquante), `/predict`, `/predict/batch`, **`/predict/trajectory`** (un point
-par cycle, cohérence `at_risk ⇔ alerte`), et exposition des seuils via `/health`. Les tests
-d'inférence sont automatiquement ignorés si les modèles sont absents de `models/`.
+Depuis `Tom/` :
+
+```bash
+docker compose up --build
+#  → API        http://localhost:8000/docs
+#  → Dashboard  http://localhost:8501   (MECHA_API_URL=http://backend:8000 injecté)
+```
+
+Le **backend** est **auto-porté** (torch **CPU** + les 3 artefacts LSTM embarqués : aucun volume
+requis) ; il expose un `healthcheck` sur `/health`. Le **frontend** (`Dockerfile.frontend`) monte
+le CSV de démo (`./assets`, non versionné) et démarre une fois le backend *healthy*.
+
+## 6. Tests & CI
+
+`uv run pytest` (depuis `Tom/`) — **20 tests** :
+- **Intégration API** (`tests/test_api.py`) : contrat d'entrée (422), `/features`, `/predict`,
+  `/predict/batch`, `/predict/trajectory`, seuils via `/health`.
+- **Unitaires** (`tests/test_units.py`) : règle d'alerte `_alert_level`, fenêtre glissante
+  `_window_ending_at`, mise en forme des requêtes (`build_single_request` / `build_requests`).
+- **Dictionnaire de données** (`tests/test_data_dictionary.py`) : cohérence doc ↔ schéma `ml.prep`.
+
+Les tests d'inférence (`@needs_models`) sont ignorés si les modèles sont absents de `models/`.
+La **CI CircleCI** (`.circleci/config.yml`) lance ces tests (`test-ia`) puis construit les images
+(`build-images`), en plus du contrôle de merge et du scan de secrets (gitleaks).

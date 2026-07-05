@@ -1,0 +1,28 @@
+# Contexte de build minimal (les COPY ne prennent que le nécessaire ;
+# on exclut ici le volumineux pour accélérer l'envoi au démon Docker).
+
+# Environnements / caches
+.venv/
+**/__pycache__/
+.pytest_cache/
+__marimo__/
+*.pyc
+
+# Modèles : on n'embarque que les 3 artefacts d'inférence (le reste est volumineux/inutile)
+models/*
+!models/scaler.joblib
+!models/lstm_classifier.pt
+!models/lstm_regressor.pt
+
+# Jeu de démo : monté au runtime (volume) côté frontend — inutile dans le contexte de build
+assets/
+
+# Livrables / exploration non nécessaires au runtime
+reports/
+notebooks/
+preAnalyse/
+*.pdf
+
+# Divers
+.python-version
+uv.lock

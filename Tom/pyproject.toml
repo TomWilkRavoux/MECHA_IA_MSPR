@@ -21,7 +21,7 @@ dependencies = [
 url = "https://download.pytorch.org/whl/cu128"
 
 [tool.pytest.ini_options]
-pythonpath = ["."]
+pythonpath = [".", "frontend"]
 testpaths = ["tests"]
 
 [dependency-groups]

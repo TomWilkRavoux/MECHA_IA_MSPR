@@ -9,6 +9,7 @@ maintenance prédictive. Elle complète `../plan.md` (feuille de route) et les n
 | Document | Contenu |
 |---|---|
 | [`repartition_donnees.md`](repartition_donnees.md) | Origine du dataset (NASA C-MAPSS), **justification de la répartition** en usines / lignes (`analyseGlobal.py`), et **consolidation** au vocabulaire MECHA (`fusionDatasetFinal.py`). |
+| [`dictionnaire_donnees.md`](dictionnaire_donnees.md) | **Dictionnaire de données par colonne** (identité, réglages, 21 capteurs C-MAPSS, cibles) : type, unité, description, domaine. Cohérence vérifiée par test. |
 | [`modele_baseline.md`](modele_baseline.md) | Baseline linéaire (régression logistique + linéaire) - plancher de performance exigé par le CDC. |
 | [`modele_random_forest.md`](modele_random_forest.md) | Random Forest - cœur de la solution (arbres, importances). |
 | [`modele_xgboost.md`](modele_xgboost.md) | Gradient Boosting (XGBoost) - état de l'art tabulaire. |
