@@ -23,14 +23,13 @@ import json
 import platform
 from datetime import datetime, timezone
 
+import joblib
 import numpy as np
 import torch
 from torch import nn
 
-from ml import metrics, prep
+from ml import metrics, prep, registry
 from ml.lstm import LSTMNet, load_lstm
-
-METRICS_PATH = prep.MODELS_DIR / "metrics.json"
 
 
 # ----------------------------------------------------------------------------
@@ -79,19 +78,27 @@ def train_head(
     return model
 
 
-def fit(device: str, *, epochs: int, seed: int) -> tuple[LSTMNet, LSTMNet]:
-    """Entraîne les deux têtes ; (ré)ajuste et sauvegarde le scaler sur le train."""
+def fit(device: str, *, epochs: int, seed: int, out_dir) -> tuple[LSTMNet, LSTMNet, object]:
+    """Entraîne les deux têtes et écrit tous les artefacts dans `out_dir`.
+
+    N'écrase **jamais** la baseline plate `models/*` : les artefacts vont dans le
+    dossier de run versionné. Retourne aussi le scaler ajusté (utilisé tel quel
+    pour l'évaluation, sans rechargement).
+    """
     torch.manual_seed(seed)
     np.random.seed(seed)
+    out_dir.mkdir(parents=True, exist_ok=True)
 
     df_clf = prep.load_train_classification()
     df_rul = prep.load_train_rul()
     tr_clf, va_clf = prep.split_by_machine(df_clf, val_frac=0.2, seed=seed)
     tr_rul, va_rul = prep.split_by_machine(df_rul, val_frac=0.2, seed=seed)
 
-    # Scaler ajusté UNIQUEMENT sur le train de classification (anti-fuite), sérialisé.
+    # Scaler ajusté UNIQUEMENT sur le train de classification (anti-fuite).
+    # save_as=None : on le sérialise nous-mêmes dans le dossier de run.
     x_fit, _ = prep.to_xy(tr_clf, target="at_risk")
-    scaler = prep.fit_scaler(x_fit)
+    scaler = prep.fit_scaler(x_fit, save_as=None)
+    joblib.dump(scaler, out_dir / "scaler.joblib")
 
     xw_tr_clf, yw_tr_clf = prep.make_windows(tr_clf, "at_risk", scaler=scaler)
     xw_va_clf, yw_va_clf = prep.make_windows(va_clf, "at_risk", scaler=scaler)
@@ -109,14 +116,14 @@ def fit(device: str, *, epochs: int, seed: int) -> tuple[LSTMNet, LSTMNet]:
         nn.BCEWithLogitsLoss(pos_weight=torch.tensor(pos_w, device=device)),
         device, epochs=epochs,
     )
-    torch.save(clf.state_dict(), prep.MODELS_DIR / "lstm_classifier.pt")
+    torch.save(clf.state_dict(), out_dir / "lstm_classifier.pt")
 
     print("  [régression] MSE")
     reg = train_head(
         xw_tr_rul, yw_tr_rul, xw_va_rul, yw_va_rul, nn.MSELoss(), device, epochs=epochs,
     )
-    torch.save(reg.state_dict(), prep.MODELS_DIR / "lstm_regressor.pt")
-    return clf, reg
+    torch.save(reg.state_dict(), out_dir / "lstm_regressor.pt")
+    return clf, reg, scaler
 
 
 # ----------------------------------------------------------------------------
@@ -145,8 +152,8 @@ def evaluate(clf: LSTMNet, reg: LSTMNet, scaler, device: str) -> dict:
     }
 
 
-def write_metrics(result: dict, *, mode: str, device: str, seed: int, epochs: int) -> None:
-    """Journalise les métriques + métadonnées de run dans models/metrics.json."""
+def write_metrics(result: dict, out_dir, *, mode: str, device: str, seed: int, epochs: int) -> None:
+    """Journalise les métriques + métadonnées de run dans `out_dir/metrics.json`."""
     payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "mode": mode,
@@ -158,8 +165,10 @@ def write_metrics(result: dict, *, mode: str, device: str, seed: int, epochs: in
         "risk_threshold": prep.RISK_THRESHOLD,
         **result,
     }
-    METRICS_PATH.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n")
-    print(f"\n  métriques → {METRICS_PATH.relative_to(prep.ROOT)}")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path = out_dir / "metrics.json"
+    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n")
+    print(f"\n  métriques → {path.relative_to(prep.ROOT)}")
 
 
 # ----------------------------------------------------------------------------
@@ -172,6 +181,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--epochs", type=int, default=30, help="Nombre d'epochs (défaut 30).")
     p.add_argument("--seed", type=int, default=42, help="Graine aléatoire (défaut 42).")
     p.add_argument("--quick", action="store_true", help="Smoke : 2 epochs (vérifie le pipeline).")
+    p.add_argument("--no-promote", action="store_true",
+                   help="Enregistre le run sans le promouvoir courant (la baseline reste servie).")
     args = p.parse_args(argv)
 
     epochs = 2 if args.quick else args.epochs
@@ -184,14 +195,22 @@ def main(argv: list[str] | None = None) -> int:
         clf, _ = load_lstm("lstm_classifier.pt", device)
         reg, _ = load_lstm("lstm_regressor.pt", device)
         mode = "eval-only"
+        # Journalise à côté des artefacts servis (run courant, sinon baseline plate).
+        out_dir = registry.resolve("metrics.json").parent
+        run_id = None
     else:
-        print(f"Mode : entraînement ({epochs} epochs, seed {args.seed})")
-        clf, reg = fit(device, epochs=epochs, seed=args.seed)
-        scaler = prep.load_scaler()
+        run_id = registry.new_run_id()
+        out_dir = registry.run_dir(run_id)
+        print(f"Mode : entraînement ({epochs} epochs, seed {args.seed}) — run {run_id}")
+        clf, reg, scaler = fit(device, epochs=epochs, seed=args.seed, out_dir=out_dir)
         mode = "quick" if args.quick else "train"
 
     result = evaluate(clf, reg, scaler, device)
-    write_metrics(result, mode=mode, device=device, seed=args.seed, epochs=epochs)
+    write_metrics(result, out_dir, mode=mode, device=device, seed=args.seed, epochs=epochs)
+    if run_id is not None:
+        registry.register_run(run_id, metrics=result, promote=not args.no_promote)
+        served = registry.current_run_id() or "baseline plate"
+        print(f"  run enregistré → registry.json (courant : {served})")
 
     c, r = result["classification"], result["regression"]
     print(f"\n  Classification  F1={c['f1']:.3f}  recall={c['recall']:.3f}  AUC={c.get('roc_auc', float('nan')):.3f}")

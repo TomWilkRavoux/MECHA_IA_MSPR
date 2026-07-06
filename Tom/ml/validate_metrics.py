@@ -19,8 +19,12 @@ import argparse
 import json
 from pathlib import Path
 
+from ml import registry  # stdlib seule : ne casse pas l'exécution CI sans torch/données
+
 ROOT = Path(__file__).resolve().parent.parent  # Tom/
-DEFAULT_METRICS = ROOT / "models" / "metrics.json"
+# Résout le run courant si un registre existe, sinon la baseline plate committée.
+# En CI (runs/ ignoré par git), c'est bien le metrics.json committé qui est validé.
+DEFAULT_METRICS = registry.resolve("metrics.json")
 DEFAULT_THRESHOLDS = ROOT / "ml" / "metrics_thresholds.json"
 
 

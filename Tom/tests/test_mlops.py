@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import pandas as pd
 
+from ml.registry import next_registry
 from ml.validate_metrics import check
 from sim.producer import build_request, history_upto, machine_frames, select_machines
 
@@ -48,6 +49,34 @@ def test_check_missing_metric_is_failure():
     failed = [r for r in check(metrics, _THRESHOLDS) if not r["ok"]]
     assert [r["metric"] for r in failed] == ["roc_auc"]
     assert failed[0]["value"] is None
+
+
+# ---------------------------------------------------------------------------
+# Registre de modèles versionné (ml.registry.next_registry) — décision pure
+# ---------------------------------------------------------------------------
+def _entry(run_id: str) -> dict:
+    return {"run_id": run_id, "metrics": {}}
+
+
+def test_first_run_becomes_current_even_without_promote():
+    # Sans run courant, le premier run enregistré devient courant (sinon rien servi).
+    reg = next_registry({"current": None, "runs": []}, _entry("R1"), promote=False)
+    assert reg["current"] == "R1"
+    assert [r["run_id"] for r in reg["runs"]] == ["R1"]
+
+
+def test_no_promote_keeps_previous_current():
+    base = {"current": "R1", "runs": [_entry("R1")]}
+    reg = next_registry(base, _entry("R2"), promote=False)
+    assert reg["current"] == "R1"  # baseline/served inchangé
+    assert {r["run_id"] for r in reg["runs"]} == {"R1", "R2"}
+
+
+def test_promote_switches_current_and_dedups():
+    base = {"current": "R1", "runs": [_entry("R1"), _entry("R2")]}
+    reg = next_registry(base, _entry("R2"), promote=True)  # ré-enregistre R2
+    assert reg["current"] == "R2"
+    assert [r["run_id"] for r in reg["runs"]] == ["R1", "R2"]  # pas de doublon
 
 
 # ---------------------------------------------------------------------------
