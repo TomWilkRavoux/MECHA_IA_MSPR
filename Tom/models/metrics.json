@@ -1,0 +1,24 @@
+{
+  "generated_at": "2026-07-06T09:27:04+00:00",
+  "mode": "eval-only",
+  "device": "cpu",
+  "python": "3.12.13",
+  "seed": 42,
+  "epochs": 30,
+  "seq_len": 30,
+  "risk_threshold": 30,
+  "classification": {
+    "accuracy": 0.9434229137199435,
+    "precision": 0.8148148148148148,
+    "recall": 0.9685534591194969,
+    "f1": 0.8850574712643678,
+    "roc_auc": 0.9930909424780793
+  },
+  "regression": {
+    "RMSE": 26.28504387877787,
+    "MAE": 18.526801837721504,
+    "R2": 0.7351223555791271,
+    "NASA": 23745.93917739045
+  },
+  "n_test_machines": 707
+}

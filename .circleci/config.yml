@@ -83,6 +83,21 @@ jobs:
           name: Lancer les tests
           command: python -m pytest -q
 
+  # Gate qualité modèle (MLOps) : refuse un modèle dont les performances régressent
+  # sous le contrat (ml/metrics_thresholds.json). Lit le rapport committé
+  # models/metrics.json (produit en local par `python -m ml.train`). Aucune dépendance
+  # (stdlib), aucune donnée requise : rapide et déterministe.
+  validate-model:
+    docker:
+      - image: cimg/python:3.12
+    working_directory: ~/project/Tom
+    steps:
+      - checkout:
+          path: ~/project
+      - run:
+          name: Gate de validation des métriques
+          command: python -m ml.validate_metrics
+
   # Valide que les images se construisent (conteneurisation, CDC §8.1).
   build-images:
     machine:
@@ -101,6 +116,7 @@ workflows:
       - block-merge-rules
       - scan-secrets
       - test-ia
+      - validate-model
       - build-images:
           requires:
             - test-ia

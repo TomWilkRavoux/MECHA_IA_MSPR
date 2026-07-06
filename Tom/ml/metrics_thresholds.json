@@ -1,0 +1,13 @@
+{
+  "_comment": "Seuils minimaux de performance du modèle en production. Le gate CI (ml/validate_metrics.py) échoue si models/metrics.json passe sous ces bornes. Valeurs calées sous les performances LSTM connues (F1 0.885, recall 0.969, AUC 0.993, RMSE 26.3, R2 0.74) avec une marge de tolérance.",
+  "classification": {
+    "f1":      { "min": 0.82 },
+    "recall":  { "min": 0.90 },
+    "roc_auc": { "min": 0.95 }
+  },
+  "regression": {
+    "RMSE": { "max": 30.0 },
+    "MAE":  { "max": 22.0 },
+    "R2":   { "min": 0.65 }
+  }
+}

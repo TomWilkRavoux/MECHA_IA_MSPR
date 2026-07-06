@@ -113,7 +113,9 @@ def fit_scaler(x_train: np.ndarray, save_as: str = "scaler.joblib") -> StandardS
 
 
 def load_scaler(name: str = "scaler.joblib") -> StandardScaler:
-    return joblib.load(MODELS_DIR / name)
+    from ml import registry  # import tardif : évite un cycle prep <-> registry
+
+    return joblib.load(registry.resolve(name))
 
 
 # ----------------------------------------------------------------------------

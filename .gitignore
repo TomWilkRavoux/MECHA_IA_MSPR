@@ -9,6 +9,9 @@ reports/
 assets/
 *.pdf
 
+# Sorties générées par le simulateur de flux (sim/producer.py)
+output/
+
 #Model
 *joblib
 *.pt
@@ -18,3 +21,8 @@ assets/
 !Tom/models/scaler.joblib
 !Tom/models/lstm_classifier.pt
 !Tom/models/lstm_regressor.pt
+
+# Registre MLOps local : runs versionnés + pointeur. La baseline plate ci-dessus
+# reste le contrat committé ; promouvoir en prod = copier un run dessus (--to-baseline).
+Tom/models/runs/
+Tom/models/registry.json

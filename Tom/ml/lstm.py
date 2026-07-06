@@ -10,7 +10,7 @@ from __future__ import annotations
 import torch
 from torch import nn
 
-from ml.prep import FEATURES, MODELS_DIR
+from ml.prep import FEATURES
 
 
 class LSTMNet(nn.Module):
@@ -38,8 +38,10 @@ class LSTMNet(nn.Module):
 
 def load_lstm(filename: str, device: str | None = None) -> tuple[LSTMNet, str]:
     """Recharge un LSTM entraîné depuis models/ et le met en mode évaluation."""
+    from ml import registry  # résout le run courant (sinon baseline plate)
+
     device = device or ("cuda" if torch.cuda.is_available() else "cpu")
     model = LSTMNet().to(device)
-    model.load_state_dict(torch.load(MODELS_DIR / filename, map_location=device))
+    model.load_state_dict(torch.load(registry.resolve(filename), map_location=device))
     model.eval()
     return model, device

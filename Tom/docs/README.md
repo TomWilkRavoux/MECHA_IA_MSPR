@@ -8,6 +8,8 @@ maintenance prédictive. Elle complète `../plan.md` (feuille de route) et les n
 
 | Document | Contenu |
 |---|---|
+| [`architecture.md`](architecture.md) | **Schéma d'architecture global** (sources → centralisation → préparation/modélisation → service IA → exploitation), distinction **réel/cible**, flux temps réel/batch, **justification des choix** et limites d'industrialisation. |
+| [`mlops.md`](mlops.md) | **Automatisation de la chaîne** : ré-entraînement reproductible (`ml/train.py`), **gate qualité en CI** (`ml/validate_metrics.py`), **simulation de flux temps réel** (`sim/producer.py`), et perspectives d'industrialisation. |
 | [`repartition_donnees.md`](repartition_donnees.md) | Origine du dataset (NASA C-MAPSS), **justification de la répartition** en usines / lignes (`analyseGlobal.py`), et **consolidation** au vocabulaire MECHA (`fusionDatasetFinal.py`). |
 | [`dictionnaire_donnees.md`](dictionnaire_donnees.md) | **Dictionnaire de données par colonne** (identité, réglages, 21 capteurs C-MAPSS, cibles) : type, unité, description, domaine. Cohérence vérifiée par test. |
 | [`modele_baseline.md`](modele_baseline.md) | Baseline linéaire (régression logistique + linéaire) - plancher de performance exigé par le CDC. |
