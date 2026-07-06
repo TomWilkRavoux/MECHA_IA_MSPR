@@ -51,12 +51,12 @@ Créer un enregistrement **A** faisant pointer le domaine vers l'IP publique du 
 
 ```
 Type   Nom              Valeur
-A      mecha.exemple.fr <IP_DU_VPS>
+A      mecha.gousnowweb.com <IP_DU_VPS>
 ```
 
 > ⚠️ Let's Encrypt (challenge HTTP-01) exige que le DNS **résolve déjà** vers le VPS et que
 > le port 80 soit joignable **au moment du premier `up`** ; sinon l'émission du certificat
-> échoue. Vérifier la propagation : `dig +short mecha.exemple.fr`.
+> échoue. Vérifier la propagation : `dig +short mecha.gousnowweb.com`.
 
 ## 4. Pare-feu
 
@@ -120,17 +120,17 @@ docker compose -f docker-compose.prod.yml ps
 docker compose -f docker-compose.prod.yml logs traefik | grep -i certificate
 
 # HTTP redirige vers HTTPS
-curl -I http://mecha.exemple.fr            # -> 301/308 vers https
+curl -I http://mecha.gousnowweb.com            # -> 301/308 vers https
 
 # basic-auth actif puis accès
-curl -I https://mecha.exemple.fr           # -> 401 Unauthorized
-curl -I -u admin:MonMotDePasse https://mecha.exemple.fr   # -> 200
+curl -I https://mecha.gousnowweb.com           # -> 401 Unauthorized
+curl -I -u admin:MonMotDePasse https://mecha.gousnowweb.com   # -> 200
 
 # l'API n'est PAS joignable publiquement
 curl --max-time 5 http://<IP_DU_VPS>:8000/health   # -> échec / timeout (attendu)
 ```
 
-Ouvrir `https://mecha.exemple.fr` dans le navigateur : login basic-auth, puis le dashboard
+Ouvrir `https://mecha.gousnowweb.com` dans le navigateur : login basic-auth, puis le dashboard
 charge et affiche le parc — ce qui prouve qu'il joint l'API **interne**.
 
 ## 8. Exploitation

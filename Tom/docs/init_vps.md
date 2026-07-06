@@ -145,25 +145,25 @@ docker compose version                 # doit afficher v2.x
 
 ## 11. DNS : faire pointer le domaine `.com` vers le VPS
 
-Chez ton registrar (ou la zone DNS OVH), créer les enregistrements **A** :
+Dans la zone DNS de `gousnowweb.com`, l'enregistrement **A** utilisé pour la solution :
 
 ```
-Type   Nom                 Valeur            TTL
-A      mecha.mondomaine.com <IP_DU_VPS>       3600
-A      www.mecha...  (opt.) <IP_DU_VPS>       3600
+Type   Sous-domaine   Cible                    Valeur         TTL
+A      mecha          mecha.gousnowweb.com     <IP_DU_VPS>    3600
 ```
 
-> Le sous-domaine choisi ici (`mecha.mondomaine.com`) devra correspondre à la variable
-> `DOMAIN` de `.env.prod` (cf. `deploiement_vps.md`).
+> ✅ Déjà fait : `mecha.gousnowweb.com` → IP du VPS. Ce nom **doit** correspondre à la
+> variable `DOMAIN` de `.env.prod` (cf. `deploiement_vps.md`), qui vaudra donc
+> `mecha.gousnowweb.com`.
 
 Vérifier la propagation avant de déployer (Let's Encrypt en dépend) :
 
 ```bash
-dig +short mecha.mondomaine.com     # doit renvoyer l'IP du VPS
+dig +short mecha.gousnowweb.com     # doit renvoyer l'IP du VPS
 ```
 
 *(Optionnel — reverse DNS/PTR)* : dans l'espace client OVH, tu peux définir le **reverse DNS**
-de l'IP vers `mecha.mondomaine.com`. Non requis pour le web, utile pour la réputation mail.
+de l'IP vers `mecha.gousnowweb.com`. Non requis pour le web, utile pour la réputation mail.
 
 ## 12. Checklist avant la mise en prod
 
