@@ -14,7 +14,7 @@ from .theme import STATUS_LABEL, STATUS_PILL
 _CSS = """
 <style>
 /* --- Épure : on retire le bruit visuel de Streamlit --- */
-[data-testid="stToolbar"], [data-testid="stDecoration"] {display: none;}
+[data-testid="stDecoration"] {display: none;}
 #MainMenu, footer {visibility: hidden;}
 header[data-testid="stHeader"] {background: transparent;}
 
@@ -64,7 +64,9 @@ _PILL_CSS = "".join(
 
 def apply() -> None:
     """Injecte la feuille de style (une fois par run)."""
-    st.markdown(_CSS.replace("</style>", _PILL_CSS + "</style>"), unsafe_allow_html=True)
+    st.markdown(
+        _CSS.replace("</style>", _PILL_CSS + "</style>"), unsafe_allow_html=True
+    )
 
 
 def status_pill(level: str) -> str:
