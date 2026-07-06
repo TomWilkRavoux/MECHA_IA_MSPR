@@ -200,15 +200,53 @@ artefacts LSTM ; la validation du contrat d'entrée, elle, tourne sans les modè
 
 ---
 
-## 7. Structure du projet
+## 7. Chaîne MLOps (entraînement automatisé, gate, flux temps réel)
+
+Détails et justifications : [`docs/mlops.md`](docs/mlops.md).
+
+### Ré-entraînement reproductible
+
+Version opérationnelle du notebook `03_lstm` : prépare, entraîne les 2 têtes, évalue et
+**journalise les métriques** dans `models/metrics.json`.
+
+```bash
+uv run python -m ml.train                 # entraîne → évalue → journalise
+uv run python -m ml.train --eval-only     # recharge les artefacts, évalue seulement
+uv run python -m ml.train --quick         # smoke : 2 epochs (vérifie le pipeline)
+```
+
+### Gate qualité (CI)
+
+Refuse un modèle dont les performances régressent sous `ml/metrics_thresholds.json`
+(job CircleCI `validate-model`). Sans dépendance ni données : lit le rapport committé.
+
+```bash
+uv run python -m ml.validate_metrics      # exit 1 si un seuil n'est pas tenu
+```
+
+### Simulation de flux temps réel
+
+Rejoue un CSV cycle par cycle vers l'API (émule les capteurs). Vue parc vivante +
+journal `output/alertes_live.csv`. **Prérequis : backend lancé (§4).**
+
+```bash
+uv run python -m sim.producer --machines 8 --interval 1.0
+```
+
+---
+
+## 8. Structure du projet
 
 ```
 Tom/
 ├── ml/                 # cœur IA partagé (prep, métriques, modèle LSTM)
+│   ├── train.py        #   entraînement reproductible → models/ + metrics.json
+│   └── validate_metrics.py  # gate qualité (seuils metrics_thresholds.json)
 ├── backend/            # application backend
 │   └── api/            # API REST FastAPI (exposition du LSTM)
 ├── frontend/           # dashboard Streamlit (consomme l'API)
-├── tests/              # tests d'intégration de l'API (pytest)
+├── sim/                # simulation de flux temps réel (producer.py → API)
+├── tests/              # tests unitaires + intégration API + MLOps (pytest)
 ├── notebooks/          # 3 notebooks de modélisation + analyse/ (évaluation)
 ├── preAnalyse/         # exploration & fusion des données brutes
 ├── docs/               # documentation technique (données + modèles)

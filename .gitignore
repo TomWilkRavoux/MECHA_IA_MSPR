@@ -9,6 +9,9 @@ reports/
 assets/
 *.pdf
 
+# Sorties générées par le simulateur de flux (sim/producer.py)
+output/
+
 #Model
 *joblib
 *.pt
