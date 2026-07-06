@@ -25,15 +25,13 @@ def _():
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
-        # Évaluation - LSTM (régression `RUL`)
+    mo.md(r"""
+    # Évaluation - LSTM (régression `RUL`)
 
-        Modèle rechargé : `models/lstm_regressor.pt` (PyTorch, entraîné sur GPU dans
-        `03_lstm.py`). Prédiction du RUL sur la fenêtre des derniers `SEQ_LEN` cycles de
-        chaque machine test, comparée à la vérité terrain `RUL_true`.
-        """
-    )
+    Modèle rechargé : `models/lstm_regressor.pt` (PyTorch, entraîné sur GPU dans
+    `03_lstm.py`). Prédiction du RUL sur la fenêtre des derniers `SEQ_LEN` cycles de
+    chaque machine test, comparée à la vérité terrain `RUL_true`.
+    """)
     return
 
 
@@ -77,16 +75,14 @@ def _(metrics, pred, y):
 
 @app.cell
 def _(m, mo):
-    mo.md(
-        f"""
-        ## Conclusion
-        - **MAE = {m["MAE"]:.1f}**, **RMSE = {m["RMSE"]:.1f}**, **R² = {m["R2"]:.2f}**,
-          **Score NASA = {m["NASA"]:.0f}**.
-        - En captant la trajectoire de dégradation, le LSTM obtient généralement les
-          **meilleurs RMSE/MAE/R²** du panel. Point de vigilance métier : surveiller le
-          **score NASA** (retards de prédiction) pour la sûreté industrielle.
-        """
-    )
+    mo.md(f"""
+    ## Conclusion
+    - **MAE = {m["MAE"]:.1f}**, **RMSE = {m["RMSE"]:.1f}**, **R² = {m["R2"]:.2f}**,
+      **Score NASA = {m["NASA"]:.0f}**.
+    - En captant la trajectoire de dégradation, le LSTM obtient généralement les
+      **meilleurs RMSE/MAE/R²** du panel. Point de vigilance métier : surveiller le
+      **score NASA** (retards de prédiction) pour la sûreté industrielle.
+    """)
     return
 
 

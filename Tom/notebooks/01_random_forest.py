@@ -15,32 +15,37 @@ def _():
         sys.path.insert(0, str(ROOT))
 
     import joblib
-    import marimo as mo
+    import marimo as mo 
     import numpy as np
     from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 
     from ml import metrics, prep
 
-    return RandomForestClassifier, RandomForestRegressor, joblib, metrics, mo, np, prep
+    return (
+        RandomForestClassifier,
+        RandomForestRegressor,
+        joblib,
+        metrics,
+        mo,
+        prep,
+    )
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
-        # 01 - Random Forest (cœur de la solution)
+    mo.md(r"""
+    # 01 - Random Forest (cœur de la solution)
 
-        **Pourquoi la Random Forest ?** Le CDC la désigne explicitement comme cœur de
-        la solution : ensemble d'arbres robuste au bruit et aux valeurs manquantes,
-        peu sensible à l'échelle des variables, et surtout **interprétable** via
-        l'importance des variables - atout majeur pour la maintenance (identifier les
-        capteurs prédictifs). Elle sert de **référence** pour les notebooks suivants.
+    **Pourquoi la Random Forest ?** Le CDC la désigne explicitement comme cœur de
+    la solution : ensemble d'arbres robuste au bruit et aux valeurs manquantes,
+    peu sensible à l'échelle des variables, et surtout **interprétable** via
+    l'importance des variables - atout majeur pour la maintenance (identifier les
+    capteurs prédictifs). Elle sert de **référence** pour les notebooks suivants.
 
-        Ce notebook traite les **deux tâches** imposées :
-        - **Classification** de l'état machine (`at_risk`, 1 si RUL ≤ 30) ;
-        - **Régression** du RUL (temps restant avant défaillance, borné à 125 cycles).
-        """
-    )
+    Ce notebook traite les **deux tâches** imposées :
+    - **Classification** de l'état machine (`at_risk`, 1 si RUL ≤ 30) ;
+    - **Régression** du RUL (temps restant avant défaillance, borné à 125 cycles).
+    """)
     return
 
 
@@ -59,7 +64,7 @@ def _(mo, prep):
         f"(train {tr_clf['machine_id'].n_unique()} / val {va_clf['machine_id'].n_unique()}). "
         f"Taux de positifs `at_risk` : {100 * df_clf['at_risk'].mean():.1f} %."
     )
-    return tr_clf, va_clf, tr_rul, va_rul
+    return tr_clf, tr_rul, va_clf, va_rul
 
 
 @app.cell
@@ -112,7 +117,9 @@ def _(
 
 @app.cell
 def _(mo):
-    mo.md(r"## Évaluation - Classification `at_risk`")
+    mo.md(r"""
+    ## Évaluation - Classification `at_risk`
+    """)
     return
 
 
@@ -133,7 +140,7 @@ def _(metrics, mo, prep, rf_clf, scaler, va_clf):
 
 
 @app.cell
-def _(metrics, pred_clf, proba_clf, y_va_clf):
+def _(metrics, pred_clf, y_va_clf):
     fig_cm = metrics.plot_confusion(
         y_va_clf, pred_clf, title="RF - Confusion (at_risk)"
     )
@@ -174,26 +181,26 @@ def _(metrics, prep, rf_clf):
 
 @app.cell
 def _(m_clf, mo):
-    mo.md(
-        f"""
-        ### Conclusion - classification
-        - **Recall = {m_clf["recall"]:.2f}** : part des machines réellement à risque
-          correctement détectées. C'est la métrique **critique** pour MECHA - un faux
-          négatif = panne manquée (arrêt non planifié, coûteux).
-        - **Precision = {m_clf["precision"]:.2f}** : quand le modèle alerte, fiabilité de
-          l'alerte. Trop bas ⇒ maintenance inutile.
-        - **F1 = {m_clf["f1"]:.2f}** synthétise les deux ; **ROC-AUC = {m_clf.get("roc_auc", float("nan")):.2f}**
-          mesure la séparabilité globale, indépendamment du seuil.
-        - Le déséquilibre (~14 % de positifs) rend l'**accuracy** peu informative : on
-          privilégie F1 / recall.
-        """
-    )
+    mo.md(f"""
+    ### Conclusion - classification
+    - **Recall = {m_clf["recall"]:.2f}** : part des machines réellement à risque
+      correctement détectées. C'est la métrique **critique** pour MECHA - un faux
+      négatif = panne manquée (arrêt non planifié, coûteux).
+    - **Precision = {m_clf["precision"]:.2f}** : quand le modèle alerte, fiabilité de
+      l'alerte. Trop bas ⇒ maintenance inutile.
+    - **F1 = {m_clf["f1"]:.2f}** synthétise les deux ; **ROC-AUC = {m_clf.get("roc_auc", float("nan")):.2f}**
+      mesure la séparabilité globale, indépendamment du seuil.
+    - Le déséquilibre (~14 % de positifs) rend l'**accuracy** peu informative : on
+      privilégie F1 / recall.
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(r"## Évaluation - Régression `RUL`")
+    mo.md(r"""
+    ## Évaluation - Régression `RUL`
+    """)
     return
 
 
@@ -242,21 +249,19 @@ def _(metrics, pred_test_rul, y_test):
 
 @app.cell
 def _(m_rul_test, mo):
-    mo.md(
-        f"""
-        ### Conclusion - régression RUL
-        - **MAE = {m_rul_test["MAE"]:.1f} cycles** : erreur moyenne en valeur absolue,
-          directement lisible par la maintenance (« ± X cycles »).
-        - **RMSE = {m_rul_test["RMSE"]:.1f}** : pénalise davantage les grosses erreurs.
-        - **R² = {m_rul_test["R2"]:.2f}** : part de variance expliquée.
-        - **Score NASA = {m_rul_test["NASA"]:.0f}** (plus bas = mieux) : pénalise les
-          **retards** de prédiction (RUL surestimé = panne détectée trop tard). C'est
-          l'indicateur le plus aligné sur le risque industriel.
+    mo.md(f"""
+    ### Conclusion - régression RUL
+    - **MAE = {m_rul_test["MAE"]:.1f} cycles** : erreur moyenne en valeur absolue,
+      directement lisible par la maintenance (« ± X cycles »).
+    - **RMSE = {m_rul_test["RMSE"]:.1f}** : pénalise davantage les grosses erreurs.
+    - **R² = {m_rul_test["R2"]:.2f}** : part de variance expliquée.
+    - **Score NASA = {m_rul_test["NASA"]:.0f}** (plus bas = mieux) : pénalise les
+      **retards** de prédiction (RUL surestimé = panne détectée trop tard). C'est
+      l'indicateur le plus aligné sur le risque industriel.
 
-        La Random Forest fixe la **référence**. Les notebooks 02 (baseline + XGBoost) et
-        03 (LSTM) seront comparés à ces valeurs dans le tableau de synthèse final.
-        """
-    )
+    La Random Forest fixe la **référence**. Les notebooks 02 (baseline + XGBoost) et
+    03 (LSTM) seront comparés à ces valeurs dans le tableau de synthèse final.
+    """)
     return
 
 

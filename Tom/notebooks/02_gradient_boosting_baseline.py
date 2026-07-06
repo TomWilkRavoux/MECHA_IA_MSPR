@@ -29,34 +29,31 @@ def _():
         joblib,
         metrics,
         mo,
-        np,
         prep,
     )
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
-        # 02 - Baseline (régression simple) + Gradient Boosting (XGBoost)
+    mo.md(r"""
+    # 02 - Baseline (régression simple) + Gradient Boosting (XGBoost)
 
-        Deux modèles, comparés à la Random Forest du notebook 01 :
+    Deux modèles, comparés à la Random Forest du notebook 01 :
 
-        1. **Baseline exigée par le CDC** - `LogisticRegression` (classification) et
-           `LinearRegression` (RUL). Modèles linéaires simples : point de comparaison
-           minimal, très interprétables mais incapables de capturer les non-linéarités.
-        2. **XGBoost** - Gradient Boosting d'arbres, état de l'art sur données
-           tabulaires. Construit les arbres séquentiellement pour corriger les erreurs
-           résiduelles ; attendu au-dessus de la Random Forest.
+    1. **Baseline exigée par le CDC** - `LogisticRegression` (classification) et
+       `LinearRegression` (RUL). Modèles linéaires simples : point de comparaison
+       minimal, très interprétables mais incapables de capturer les non-linéarités.
+    2. **XGBoost** - Gradient Boosting d'arbres, état de l'art sur données
+       tabulaires. Construit les arbres séquentiellement pour corriger les erreurs
+       résiduelles ; attendu au-dessus de la Random Forest.
 
-        Les deux tâches (`at_risk` + `RUL`) sont traitées.
-        """
-    )
+    Les deux tâches (`at_risk` + `RUL`) sont traitées.
+    """)
     return
 
 
 @app.cell
-def _(mo, np, prep):
+def _(mo, prep):
     # --- Chargement + split par machine + normalisation ---
     df_clf = prep.load_train_classification()
     df_rul = prep.load_train_rul()
@@ -163,16 +160,18 @@ def _(
 
 @app.cell
 def _(mo, xgb_clf, xgb_reg):
-    mo.md(
-        f"**XGBoost - arbres retenus (early stopping)** : classif "
-        f"{xgb_clf.best_iteration + 1} · RUL {xgb_reg.best_iteration + 1}."
-    )
+    mo.md(f"""
+    **XGBoost - arbres retenus (early stopping)** : classif "
+        f"{xgb_clf.best_iteration + 1} · RUL {xgb_reg.best_iteration + 1}.
+    """)
     return
 
 
 @app.cell
 def _(mo):
-    mo.md(r"## Évaluation sur le jeu de test officiel")
+    mo.md(r"""
+    ## Évaluation sur le jeu de test officiel
+    """)
     return
 
 
@@ -192,7 +191,7 @@ def _(lr_clf, lr_reg, metrics, prep, xgb_clf, xgb_reg):
     )
     m_base_rul = metrics.regression_metrics(y_rul, lr_reg.predict(xt))
     m_xgb_rul = metrics.regression_metrics(y_rul, xgb_reg.predict(xt))
-    return m_base_clf, m_base_rul, m_xgb_clf, m_xgb_rul, xt, xgb_reg, y_rul
+    return m_base_clf, m_base_rul, m_xgb_clf, m_xgb_rul, xt, y_rul
 
 
 @app.cell
@@ -233,21 +232,19 @@ def _(metrics, xgb_reg, xt, y_rul):
 
 @app.cell
 def _(m_base_clf, m_base_rul, m_xgb_clf, m_xgb_rul, mo):
-    mo.md(
-        f"""
-        ### Conclusion - comparaison
-        - **Classification** : XGBoost (F1 = {m_xgb_clf["f1"]:.2f}, AUC =
-          {m_xgb_clf.get("roc_auc", float("nan")):.2f}) contre la baseline logistique
-          (F1 = {m_base_clf["f1"]:.2f}). L'écart mesure l'apport des non-linéarités et
-          interactions entre capteurs que le modèle linéaire ne capte pas.
-        - **RUL** : XGBoost (RMSE = {m_xgb_rul["RMSE"]:.1f}, score NASA =
-          {m_xgb_rul["NASA"]:.0f}) contre la régression linéaire (RMSE =
-          {m_base_rul["RMSE"]:.1f}). La baseline pose le plancher de performance ;
-          le boosting réduit nettement l'erreur.
-        - À reporter dans le **tableau de synthèse final** face à la Random Forest (01)
-          et au LSTM (03).
-        """
-    )
+    mo.md(f"""
+    ### Conclusion - comparaison
+    - **Classification** : XGBoost (F1 = {m_xgb_clf["f1"]:.2f}, AUC =
+      {m_xgb_clf.get("roc_auc", float("nan")):.2f}) contre la baseline logistique
+      (F1 = {m_base_clf["f1"]:.2f}). L'écart mesure l'apport des non-linéarités et
+      interactions entre capteurs que le modèle linéaire ne capte pas.
+    - **RUL** : XGBoost (RMSE = {m_xgb_rul["RMSE"]:.1f}, score NASA =
+      {m_xgb_rul["NASA"]:.0f}) contre la régression linéaire (RMSE =
+      {m_base_rul["RMSE"]:.1f}). La baseline pose le plancher de performance ;
+      le boosting réduit nettement l'erreur.
+    - À reporter dans le **tableau de synthèse final** face à la Random Forest (01)
+      et au LSTM (03).
+    """)
     return
 
 

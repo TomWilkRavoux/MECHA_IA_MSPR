@@ -92,7 +92,7 @@ def _(prep):
 
 
 @app.cell
-def _(DEVICE, np, torch):
+def _(DEVICE, torch):
     # --- Boucle d'entraînement générique avec early stopping ---
     def _to_gpu(x):
         return torch.as_tensor(x, dtype=torch.float32, device=DEVICE)
@@ -147,7 +147,7 @@ def _(DEVICE, np, torch):
             model.load_state_dict(best_state)  # restore best weights
         return hist
 
-    return train_model
+    return (train_model,)
 
 
 @app.cell
@@ -214,7 +214,9 @@ def _(hist_reg, metrics):
 
 @app.cell
 def _(mo):
-    mo.md(r"## Évaluation sur le jeu de test officiel")
+    mo.md(r"""
+    ## Évaluation sur le jeu de test officiel
+    """)
     return
 
 
@@ -262,20 +264,18 @@ def _(metrics, pred_rul, y_rul_true):
 
 @app.cell
 def _(m_lstm_clf, m_lstm_rul, mo):
-    mo.md(
-        f"""
-        ### Conclusion - LSTM
-        - **Classification** : F1 = {m_lstm_clf["f1"]:.2f}, recall =
-          {m_lstm_clf["recall"]:.2f}, AUC = {m_lstm_clf.get("roc_auc", float("nan")):.2f}.
-        - **RUL** : RMSE = {m_lstm_rul["RMSE"]:.1f}, MAE = {m_lstm_rul["MAE"]:.1f},
-          R² = {m_lstm_rul["R2"]:.2f}, score NASA = {m_lstm_rul["NASA"]:.0f}.
-        - Les **courbes d'apprentissage** (loss/val_loss) permettent de vérifier
-          l'absence de sur-apprentissage : l'early stopping restaure les meilleurs poids.
-        - Le LSTM exploite la temporalité que les modèles tabulaires ignorent : gain
-          attendu surtout sur le **RUL** (dynamique de dégradation). À comparer aux
-          notebooks 01 (RF) et 02 (XGBoost) dans le tableau de synthèse.
-        """
-    )
+    mo.md(f"""
+    ### Conclusion - LSTM
+    - **Classification** : F1 = {m_lstm_clf["f1"]:.2f}, recall =
+      {m_lstm_clf["recall"]:.2f}, AUC = {m_lstm_clf.get("roc_auc", float("nan")):.2f}.
+    - **RUL** : RMSE = {m_lstm_rul["RMSE"]:.1f}, MAE = {m_lstm_rul["MAE"]:.1f},
+      R² = {m_lstm_rul["R2"]:.2f}, score NASA = {m_lstm_rul["NASA"]:.0f}.
+    - Les **courbes d'apprentissage** (loss/val_loss) permettent de vérifier
+      l'absence de sur-apprentissage : l'early stopping restaure les meilleurs poids.
+    - Le LSTM exploite la temporalité que les modèles tabulaires ignorent : gain
+      attendu surtout sur le **RUL** (dynamique de dégradation). À comparer aux
+      notebooks 01 (RF) et 02 (XGBoost) dans le tableau de synthèse.
+    """)
     return
 
 
