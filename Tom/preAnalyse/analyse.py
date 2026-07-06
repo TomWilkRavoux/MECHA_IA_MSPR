@@ -6,13 +6,14 @@ app = marimo.App(width="medium")
 
 @app.cell
 def _():
-    import marimo as mo
-    import polars as pl
-    import numpy as np
-    import sweetviz as sv
     import os
     from pathlib import Path
+
     import altair as alt
+    import marimo as mo
+    import numpy as np
+    import polars as pl
+    import sweetviz as sv
 
     return Path, mo, pl, sv
 
@@ -95,10 +96,7 @@ def _(CSV_FOLDER, Path, pl):
 
 @app.cell
 def _(dfs, mo):
-    dataset_selector = mo.ui.dropdown(
-        options=list(dfs.keys()),
-        label="Choisir un CSV"
-    )
+    dataset_selector = mo.ui.dropdown(options=list(dfs.keys()), label="Choisir un CSV")
     dataset_selector
     return (dataset_selector,)
 
@@ -107,8 +105,9 @@ def _(dfs, mo):
 def _(dataset_selector, dfs, mo):
     def _():
         df = dfs[dataset_selector.value]
-        return mo.md(f"##`{dataset_selector.value}` — {df.shape[0]:,} lignes × {df.shape[1]} colonnes")
-
+        return mo.md(
+            f"##`{dataset_selector.value}` - {df.shape[0]:,} lignes × {df.shape[1]} colonnes"
+        )
 
     _()
     return
@@ -117,8 +116,7 @@ def _(dataset_selector, dfs, mo):
 @app.cell
 def _(dfs, mo):
     report_selector = mo.ui.dropdown(
-        options=list(dfs.keys()),
-        label="Choisir un CSV pour le rapport Sweetviz"
+        options=list(dfs.keys()), label="Choisir un CSV pour le rapport Sweetviz"
     )
     report_selector
     return (report_selector,)
@@ -131,7 +129,6 @@ def _(dfs, report_selector, sv):
 
         report = sv.analyze([df_pandas, report_selector.value])
         return report.show_notebook()
-
 
     _()
     return

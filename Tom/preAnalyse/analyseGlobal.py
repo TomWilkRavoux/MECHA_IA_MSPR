@@ -6,13 +6,14 @@ app = marimo.App(width="medium")
 
 @app.cell
 def _():
-    import marimo as mo
-    import polars as pl
-    import matplotlib.pyplot as plt
-    from pathlib import Path
-    from sklearn.preprocessing import StandardScaler
-    from sklearn.cluster import KMeans
     import pathlib
+    from pathlib import Path
+
+    import marimo as mo
+    import matplotlib.pyplot as plt
+    import polars as pl
+    from sklearn.cluster import KMeans
+    from sklearn.preprocessing import StandardScaler
 
     return KMeans, Path, StandardScaler, mo, pl, plt
 
@@ -21,11 +22,10 @@ def _():
 def _(Path, mo):
     DATA_DIR = Path("./assets/KaggleDataset/CMaps/")
     SUBSETS = ["FD001", "FD002", "FD003", "FD004"]
-    COLS = (
-        ["unit", "cycle", "op_setting_1", "op_setting_2", "op_setting_3"]
-        + [f"sensor_{i}" for i in range(1, 22)]
-    )
-    mo.md("### Exploration C-MAPSS — justification du découpage usines / lignes")
+    COLS = ["unit", "cycle", "op_setting_1", "op_setting_2", "op_setting_3"] + [
+        f"sensor_{i}" for i in range(1, 22)
+    ]
+    mo.md("### Exploration C-MAPSS - justification du découpage usines / lignes")
     return COLS, DATA_DIR, SUBSETS
 
 
@@ -64,7 +64,8 @@ def _(df_all, pl):
     unit_life = df_all.group_by(["subset", "unit"]).agg(vie=pl.col("cycle").max())
 
     overview = (
-        df_all.group_by("subset").agg(
+        df_all.group_by("subset")
+        .agg(
             n_lignes=pl.len(),
             n_machines=pl.col("unit").n_unique(),
         )
@@ -97,7 +98,8 @@ def _(mo):
 @app.cell
 def _(df_all, pl):
     op_var = (
-        df_all.group_by("subset").agg(
+        df_all.group_by("subset")
+        .agg(
             std_op1=pl.col("op_setting_1").std().round(3),
             std_op2=pl.col("op_setting_2").std().round(3),
             std_op3=pl.col("op_setting_3").std().round(3),
@@ -110,7 +112,7 @@ def _(df_all, pl):
 
 @app.cell
 def _(KMeans, StandardScaler, df_all, pl):
-    #Confirmation par cluster
+    # Confirmation par cluster
     op_X = df_all.select(["op_setting_1", "op_setting_2", "op_setting_3"]).to_numpy()
     op_Xs = StandardScaler().fit_transform(op_X)
     op_km = KMeans(n_clusters=6, n_init=10, random_state=42).fit(op_Xs)
@@ -118,10 +120,14 @@ def _(KMeans, StandardScaler, df_all, pl):
     df_reg = df_all.with_columns(pl.Series("regime", op_km.labels_))
 
     regimes_par_subset = (
-        df_reg.group_by(["subset", "regime"]).agg(eff=pl.len())
-        .with_columns((pl.col("eff") / pl.col("eff").sum().over("subset")).alias("part"))
+        df_reg.group_by(["subset", "regime"])
+        .agg(eff=pl.len())
+        .with_columns(
+            (pl.col("eff") / pl.col("eff").sum().over("subset")).alias("part")
+        )
         .filter(pl.col("part") >= 0.01)  # on ignore les régimes marginaux (<1%)
-        .group_by("subset").agg(nb_regimes=pl.col("regime").n_unique())
+        .group_by("subset")
+        .agg(nb_regimes=pl.col("regime").n_unique())
         .sort("subset")
     )
     regimes_par_subset
@@ -139,7 +145,9 @@ def _(SUBSETS, df_all, pl, plt):
         ax.set_title(name)
         ax.set_xlabel("op_setting_1")
         ax.set_ylabel("op_setting_2")
-    fig_regimes.suptitle("Régimes opératoires : 1 nuage (FD001/FD003) vs 6 (FD002/FD004)")
+    fig_regimes.suptitle(
+        "Régimes opératoires : 1 nuage (FD001/FD003) vs 6 (FD002/FD004)"
+    )
     fig_regimes.tight_layout()
     fig_regimes
     return
@@ -152,7 +160,9 @@ def _(SUBSETS, df_all, pl, plt):
         vals = df_all.filter(pl.col("subset") == nameEff)["sensor_2"].to_numpy()
         axEff.hist(vals, bins=60)
         axEff.set_title(nameEff)
-    fig_sensor.suptitle("Capteur 2 : unimodal (FD001/FD003) vs multimodal (FD002/FD004)")
+    fig_sensor.suptitle(
+        "Capteur 2 : unimodal (FD001/FD003) vs multimodal (FD002/FD004)"
+    )
     fig_sensor.tight_layout()
     fig_sensor  # change l'indice du capteur pour explorer (sensor_3, sensor_4...)
     return
@@ -177,10 +187,13 @@ def _(mo):
 @app.cell
 def _(pl, unit_life):
     fault_signal = (
-        unit_life.group_by("subset").agg(
+        unit_life.group_by("subset")
+        .agg(
             vie_moy=pl.col("vie").mean().round(1),
             vie_std=pl.col("vie").std().round(1),
-            cv=(pl.col("vie").std() / pl.col("vie").mean()).round(3),  # coeff. de variation
+            cv=(pl.col("vie").std() / pl.col("vie").mean()).round(
+                3
+            ),  # coeff. de variation
         )
         .sort("subset")
     )
@@ -212,14 +225,21 @@ def _(mo):
 
 @app.cell
 def _(df_all, pl):
-    df_mecha = df_all.with_columns([
-        pl.when(pl.col("subset").is_in(["FD001", "FD002"]))
-          .then(pl.lit("Usine A")).otherwise(pl.lit("Usine B")).alias("usine"),
-        pl.when(pl.col("subset").is_in(["FD001", "FD003"]))
-          .then(pl.lit("Ligne 1 (dédiée)")).otherwise(pl.lit("Ligne 2 (polyvalente)"))
-          .alias("ligne_production"),
-    ])
-    df_mecha.select(["subset", "usine", "ligne_production"]).unique().sort(["usine", "ligne_production"])
+    df_mecha = df_all.with_columns(
+        [
+            pl.when(pl.col("subset").is_in(["FD001", "FD002"]))
+            .then(pl.lit("Usine A"))
+            .otherwise(pl.lit("Usine B"))
+            .alias("usine"),
+            pl.when(pl.col("subset").is_in(["FD001", "FD003"]))
+            .then(pl.lit("Ligne 1 (dédiée)"))
+            .otherwise(pl.lit("Ligne 2 (polyvalente)"))
+            .alias("ligne_production"),
+        ]
+    )
+    df_mecha.select(["subset", "usine", "ligne_production"]).unique().sort(
+        ["usine", "ligne_production"]
+    )
     return
 
 
