@@ -1,0 +1,106 @@
+# Déploiement PRODUCTION de la solution MECHA sur un VPS.
+#
+# Différences avec docker-compose.yml (dev) :
+#   - Traefik en frontal (80/443) : HTTPS Let's Encrypt automatique + redirection HTTP→HTTPS.
+#   - Seul le dashboard est PUBLIC (https://$DOMAIN), protégé par basic-auth.
+#   - L'API FastAPI reste sur le réseau Docker INTERNE (aucun port publié, non routable
+#     depuis Internet) : le frontend l'appelle en privé via http://backend:8000.
+#   - restart: unless-stopped partout (survit à un reboot du VPS).
+#
+# Prérequis & procédure complète : docs/deploiement_vps.md
+# Lancement :
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+#
+# Variables attendues dans .env.prod : DOMAIN, ACME_EMAIL, BASIC_AUTH (cf. .env.prod.example)
+
+services:
+  # --- Reverse proxy + terminaison TLS -------------------------------------
+  traefik:
+    image: traefik:v3.3
+    restart: unless-stopped
+    command:
+      # Découverte des conteneurs via l'API Docker (rien exposé par défaut)
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=web"
+      # Points d'entrée HTTP (80) et HTTPS (443)
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      # Redirection globale HTTP -> HTTPS
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      # Let's Encrypt (challenge HTTP-01 sur le port 80)
+      - "--certificatesresolvers.le.acme.email=${ACME_EMAIL}"
+      - "--certificatesresolvers.le.acme.storage=/letsencrypt/acme.json"
+      - "--certificatesresolvers.le.acme.httpchallenge=true"
+      - "--certificatesresolvers.le.acme.httpchallenge.entrypoint=web"
+      # Admin Traefik désactivée (pas d'UI exposée)
+      - "--api.dashboard=false"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"  # lecture seule : Traefik lit les labels
+      - "letsencrypt:/letsencrypt"                        # certificats persistés (acme.json en 600)
+    networks:
+      - web
+
+  # --- API d'inférence (INTERNE, non exposée) ------------------------------
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    image: mecha-backend
+    restart: unless-stopped
+    # Aucun `ports:` : joignable uniquement depuis le réseau interne (par le frontend).
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - internal
+    labels:
+      - "traefik.enable=false"  # jamais routé par Traefik
+
+  # --- Dashboard d'exploitation (PUBLIC, derrière Traefik + basic-auth) -----
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    image: mecha-frontend
+    restart: unless-stopped
+    environment:
+      MECHA_API_URL: "http://backend:8000"  # appel privé de l'API (réseau internal)
+    volumes:
+      - ./assets:/app/assets:ro              # jeu de démonstration (non versionné)
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - web        # joignable par Traefik
+      - internal   # peut appeler le backend
+    labels:
+      - "traefik.enable=true"
+      # Routeur HTTPS sur le domaine
+      - "traefik.http.routers.mecha.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.mecha.entrypoints=websecure"
+      - "traefik.http.routers.mecha.tls.certresolver=le"
+      - "traefik.http.routers.mecha.middlewares=mecha-auth"
+      # Basic-auth (hash htpasswd, $ doublés en $$ dans .env.prod)
+      - "traefik.http.middlewares.mecha-auth.basicauth.users=${BASIC_AUTH}"
+      # Port interne du dashboard Streamlit
+      - "traefik.http.services.mecha.loadbalancer.server.port=8501"
+
+networks:
+  web:        # réseau frontal (Traefik <-> frontend)
+    name: mecha_web
+  internal:   # réseau privé (frontend <-> backend), non routable depuis l'hôte
+    name: mecha_internal
+    internal: true
+
+volumes:
+  letsencrypt:
