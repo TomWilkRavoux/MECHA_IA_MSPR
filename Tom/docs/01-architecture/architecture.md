@@ -7,8 +7,8 @@
 Ce document décrit l'architecture **cible** (environnement industriel MECHA) et distingue
 clairement ce qui est **réellement implémenté dans le prototype** de ce qui est **décrit comme
 perspective d'industrialisation**. Les volets détaillés vivent dans les docs dédiées :
-[`repartition_donnees.md`](repartition_donnees.md) (sources/données), les `modele_*.md`
-(modélisation), [`dashboard_technique.md`](dashboard_technique.md) (exposition/restitution).
+[`repartition_donnees.md`](../02-donnees/repartition_donnees.md) (sources/données), les `modele_*.md`
+(modélisation), [`dashboard_technique.md`](../05-exploitation/dashboard_technique.md) (exposition/restitution).
 
 ---
 
@@ -72,7 +72,7 @@ flowchart TB
 
 | Couche CDC | Cible industrielle MECHA | Implémentation prototype |
 |---|---|---|
-| **Sources** | Capteurs IoT + SCADA/MES + historique maintenance | Jeu **NASA C-MAPSS** renommé au vocabulaire MECHA (`machine_id`, `usine`, `ligne_production`, `cycle`) — 21 capteurs + 3 réglages, cf. [`repartition_donnees.md`](repartition_donnees.md) |
+| **Sources** | Capteurs IoT + SCADA/MES + historique maintenance | Jeu **NASA C-MAPSS** renommé au vocabulaire MECHA (`machine_id`, `usine`, `ligne_production`, `cycle`) — 21 capteurs + 3 réglages, cf. [`repartition_donnees.md`](../02-donnees/repartition_donnees.md) |
 | **Centralisation** | Entrepôt de données / stockage intermédiaire | Fichiers CSV versionnés dans `assets/KaggleDataset/` (train clf, train RUL, test, RUL vérité terrain) |
 | **Préparation** | Pipeline temps réel + batch sur l'entrepôt | `ml/prep.py` : split par machine, `StandardScaler` (fit **train only**), fenêtres glissantes `SEQ_LEN=30`, clip RUL |
 | **Modélisation** | Ré-entraînement périodique | Notebooks → 4 modèles comparés, **LSTM** retenu ; artefacts `.pt` + `scaler.joblib` |
@@ -122,7 +122,7 @@ CSV cycles machines ──▶ dashboard.py ──HTTP/JSON──▶ FastAPI ─�
   Le contrat d'entrée (24 variables ordonnées) est publié par `/features`.
 - **Frontend `frontend/ui`** — **découplé de l'IA** : ne charge **aucun modèle**, n'importe ni
   `ml/` ni `torch`, consomme exclusivement l'API. Structure `screen/` · `style/` · `utils/`
-  (cf. [`dashboard_technique.md`](dashboard_technique.md)).
+  (cf. [`dashboard_technique.md`](../05-exploitation/dashboard_technique.md)).
 
 ### 3.3 Endpoints d'exposition (mécanisme d'intégration IA ↔ appli)
 
@@ -169,7 +169,7 @@ Conformément au schéma du CDC, deux régimes cohabitent :
 |---|---|---|
 | **Architecture en services découplés** (API ↔ front) | App monolithique embarquant le modèle | Le CDC impose l'IA **exposée en service** ; permet de faire évoluer le modèle sans toucher au front, et de réutiliser l'API pour d'autres clients (SCADA/MES, notebooks, tests). Tolérance aux pannes et déploiement indépendant. |
 | **FastAPI** | Flask | Validation d'entrée native (Pydantic → 422 sur contrat non respecté), `/docs` OpenAPI auto, async — adapté à un contrat de données strict et à l'intégration SI. |
-| **LSTM** retenu (2 têtes) | RF / XGBoost / baseline | Exploite la **temporalité** des trajectoires machines ; meilleures métriques sur les deux tâches (cf. [`README.md`](README.md)). RF/XGBoost conservés comme **comparateurs** exigés par le CDC. |
+| **LSTM** retenu (2 têtes) | RF / XGBoost / baseline | Exploite la **temporalité** des trajectoires machines ; meilleures métriques sur les deux tâches (cf. [`README.md`](../README.md)). RF/XGBoost conservés comme **comparateurs** exigés par le CDC. |
 | **Streamlit** | Dash / Power BI | Prototypage rapide d'un dashboard Python cohérent avec la stack data ; suffisant pour démontrer l'exploitation métier. |
 | **Docker Compose** | Déploiement manuel | Environnement standardisé reproductible (imposé CDC) ; backend **auto-porté** (torch CPU + artefacts embarqués), healthcheck, front démarré après backend *healthy*. |
 | **CircleCI** | GitHub Actions / GitLab CI | Chaîne minimale imposée : lance les tests **puis** build les images (+ contrôle de merge, scan de secrets gitleaks). |
@@ -199,13 +199,13 @@ docker compose up --build   (depuis Tom/)
 
 - **Sources temps réel non branchées** : le prototype lit des CSV. Le chemin temps réel est
   toutefois **démontré** par `sim/producer.py` (rejeu cadencé du CSV vers l'API, cf.
-  [`mlops.md`](mlops.md)) ; l'industrialisation remplace ce rejeu par un connecteur
+  [`mlops.md`](../04-mlops/mlops.md)) ; l'industrialisation remplace ce rejeu par un connecteur
   IoT/SCADA → entrepôt (Kafka / passerelle OPC-UA, à cadrer).
 - **Ré-entraînement** : industrialisé en commande unique reproductible (`ml/train.py`) avec
   **gate qualité en CI** (`ml/validate_metrics.py`) ; reste à ajouter l'orchestration
-  planifiée et le monitoring de dérive (cf. [`mlops.md`](mlops.md) §5).
+  planifiée et le monitoring de dérive (cf. [`mlops.md`](../04-mlops/mlops.md) §5).
 - **Dataset C-MAPSS** : trajectoires run-to-failure de turbines, **transposées** au vocabulaire
   MECHA — représentatif du *pattern* de dégradation, pas du parc réel (biais assumé, cf.
-  [`repartition_donnees.md`](repartition_donnees.md)).
+  [`repartition_donnees.md`](../02-donnees/repartition_donnees.md)).
 - **Prérequis de déploiement** : Docker sur chaque site, accès réseau front→API, horodatage
   fiable des cycles (cohérence temporelle).
