@@ -202,7 +202,7 @@ artefacts LSTM ; la validation du contrat d'entrée, elle, tourne sans les modè
 
 ## 7. Chaîne MLOps (entraînement automatisé, gate, flux temps réel)
 
-Détails et justifications : [`docs/mlops.md`](docs/mlops.md).
+Détails et justifications : [`docs/mlops.md`](docs/04-mlops/mlops.md).
 
 ### Ré-entraînement reproductible
 

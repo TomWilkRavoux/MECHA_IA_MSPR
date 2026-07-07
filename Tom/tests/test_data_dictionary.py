@@ -12,7 +12,7 @@ from pathlib import Path
 
 from ml.prep import FEATURES, KEYS
 
-DOC = Path(__file__).resolve().parents[1] / "docs" / "dictionnaire_donnees.md"
+DOC = Path(__file__).resolve().parents[1] / "docs" / "02-donnees" / "dictionnaire_donnees.md"
 
 # Colonnes attendues : identité (KEYS) + réglages/capteurs (FEATURES) + cibles + vérité terrain.
 EXPECTED = set(KEYS) | set(FEATURES) | {"RUL", "at_risk", "RUL_true"}

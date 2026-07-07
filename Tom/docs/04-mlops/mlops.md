@@ -2,7 +2,7 @@
 
 > Répond au point d'industrialisation du CDC : *« principes de déploiement et
 > d'exploitation, perspectives d'industrialisation »* et *« appliquer l'intégration
-> continue »*. Complète [`architecture.md`](architecture.md) (schéma global).
+> continue »*. Complète [`architecture.md`](../01-architecture/architecture.md) (schéma global).
 
 Ce document décrit comment la chaîne *données → modèle → service* est **automatisée** :
 un ré-entraînement reproductible en une commande, un **garde-fou qualité** en intégration
@@ -49,7 +49,7 @@ split par machine anti-fuite, `StandardScaler` ajusté sur le train, fenêtres g
 il **n'écrase jamais** la baseline plate committée (cf. §2 bis).
 
 > **Reproductibilité vérifiée** : `--eval-only` sur les artefacts committés redonne les
-> chiffres du [`README.md`](README.md) (F1 0.885, recall 0.969, AUC 0.993, RMSE 26.3,
+> chiffres du [`README.md`](../README.md) (F1 0.885, recall 0.969, AUC 0.993, RMSE 26.3,
 > R² 0.74), ce qui garantit que `train.py` et les notebooks décrivent bien le même modèle.
 
 ## 2 bis. Registre de modèles versionné `ml/registry.py`
