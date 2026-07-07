@@ -83,7 +83,7 @@ def _dialog_tous_capteurs(g: pd.DataFrame) -> None:
         .encode(
             x=alt.X("cycle:Q", title="Cycle"),
             y=alt.Y("Valeur:Q", title=None, scale=alt.Scale(zero=False)),
-            facet=alt.Facet("Capteur:N", columns=3, title=None),
+            facet=alt.Facet("Capteur:N", columns=4, title=None),
         )
         .resolve_scale(y="independent")
         .properties(width=220, height=120)
@@ -176,8 +176,11 @@ def render_trajectory_tabs(
                 .resolve_scale(y="independent")
                 .properties(width=300, height=160)
             )
-            st.altair_chart(chart, use_container_width=False)
-            if st.button("Afficher tous les capteurs", key=f"{key_prefix}_btn_tous_capteurs"):
-                _dialog_tous_capteurs(g)
+            col_graphes, col_bouton = st.columns([3, 1], vertical_alignment="center")
+            with col_graphes:
+                st.altair_chart(chart, use_container_width=False)
+            with col_bouton:
+                if st.button("Afficher tous les capteurs", key=f"{key_prefix}_btn_tous_capteurs"):
+                    _dialog_tous_capteurs(g)
         else:
             st.info("Aucun capteur de démonstration disponible pour cette machine.")
