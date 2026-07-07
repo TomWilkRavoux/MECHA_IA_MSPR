@@ -8,11 +8,15 @@ Deux têtes LSTM distinctes : classification (`at_risk`) et régression (`RUL`).
 
 from __future__ import annotations
 
+import os
+
 import numpy as np
 import torch
 
 from ml.lstm import load_lstm
 from ml.prep import FEATURES, RISK_THRESHOLD, SEQ_LEN, load_scaler
+
+torch.set_num_threads(int(os.getenv("TORCH_NUM_THREADS", "3")))
 
 # Seuils métier pour la hiérarchisation des alertes (cf. CDC §5 : seuils/alertes).
 CRITICAL_RUL = RISK_THRESHOLD // 2  # dégradation avancée -> intervention prioritaire
@@ -96,6 +100,33 @@ class ModelService:
             "threshold": RISK_THRESHOLD,
             "n_cycles_used": n_used,
         }
+
+    def predict_many(self, machines_cycles: list[list[dict[str, float]]]) -> list[dict]:
+        """Prédiction d'un lot de machines en **un seul passage batch**.
+
+        Empile la fenêtre glissante de chaque machine et n'exécute qu'un forward
+        pour tout le parc (au lieu de N forwards de batch 1). Résultat identique à
+        N appels `predict`, ordre d'entrée préservé.
+        """
+        if not self.ready:
+            raise RuntimeError("Modèles non chargés.")
+        windows, n_used = [], []
+        for cycles in machines_cycles:
+            arr = self._normalize(cycles)
+            w, n = self._window_ending_at(arr, len(arr))
+            windows.append(w)
+            n_used.append(n)
+        # np.stack est sûr : _window_ending_at renvoie toujours (SEQ_LEN, n_features)
+        # grâce au left-padding, donc toutes les fenêtres ont la même forme.
+        probas, ruls = self._infer(np.stack(windows))
+        return [
+            {
+                **self._format(bool(p >= 0.5), float(p), float(r)),
+                "threshold": RISK_THRESHOLD,
+                "n_cycles_used": n,
+            }
+            for p, r, n in zip(probas, ruls, n_used)
+        ]
 
     def predict_trajectory(self, cycles: list[dict[str, float]]) -> list[dict]:
         """Prédiction cycle par cycle : une fenêtre glissante par cycle observé.

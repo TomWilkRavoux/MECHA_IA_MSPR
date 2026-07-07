@@ -9,6 +9,14 @@
 
 services:
   backend:
+    environment:
+      TORCH_NUM_THREADS: "3"
+      OMP_NUM_THREADS: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: "3.0"
+          memory: 2g
     build:
       context: .
       dockerfile: Dockerfile.backend

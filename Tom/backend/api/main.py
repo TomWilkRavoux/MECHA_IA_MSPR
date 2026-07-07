@@ -85,12 +85,22 @@ def predict(req: PredictRequest) -> PredictResponse:
 
 @app.post("/predict/batch", response_model=BatchPredictResponse, tags=["prediction"])
 def predict_batch(req: BatchPredictRequest) -> BatchPredictResponse:
-    """Prédiction pour un lot de machines (supervision d'un parc / d'une ligne)."""
+    """Prédiction pour un lot de machines (supervision d'un parc / d'une ligne).
+
+    Tout le parc est évalué en **un seul passage batch** (cf. `predict_many`) :
+    contrat identique à N appels `/predict`, mais un forward unique au lieu de N.
+    """
     if not service.ready:
         raise HTTPException(
             status_code=503, detail="Modèles non chargés (voir /health)."
         )
-    return BatchPredictResponse(results=[_predict_one(m) for m in req.machines])
+    outs = service.predict_many([[c.values for c in m.cycles] for m in req.machines])
+    return BatchPredictResponse(
+        results=[
+            PredictResponse(machine_id=m.machine_id, **out)
+            for m, out in zip(req.machines, outs)
+        ]
+    )
 
 
 @app.post("/predict/trajectory", response_model=TrajectoryResponse, tags=["prediction"])

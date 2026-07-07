@@ -101,6 +101,20 @@ def test_batch(client, sample):
 
 
 @needs_models
+def test_batch_matches_single(client, sample):
+    # Le batch groupé (un seul forward pour tout le parc) doit renvoyer EXACTEMENT
+    # le même résultat que N appels /predict unitaires, ordre d'entrée préservé.
+    ids = sample["machine_id"].unique().to_list()[:3]
+    machines = [{"machine_id": str(m), "cycles": _cycles_for(sample, m)} for m in ids]
+
+    singles = [client.post("/predict", json=m).json() for m in machines]
+    batch = client.post("/predict/batch", json={"machines": machines}).json()["results"]
+
+    assert [b["machine_id"] for b in batch] == [str(m) for m in ids]
+    assert batch == singles
+
+
+@needs_models
 def test_trajectory_contract(client, sample):
     mid = sample["machine_id"][0]
     cycles = _cycles_for(sample, mid)
