@@ -10,7 +10,7 @@ import altair as alt
 import pandas as pd
 import requests
 import streamlit as st
-from api_client import ApiClient, build_single_request
+from api_client import ApiClient, build_single_request, META_COLS
 
 from ..style.css import status_pill
 
@@ -67,16 +67,42 @@ def _trajectory_chart(
         )
     return alt.layer(*layers).properties(height=260)
 
+@st.dialog("Évolution de tous les capteurs", width="large")
+def _dialog_tous_capteurs(g: pd.DataFrame) -> None:
+    """Fenêtre modale : petits multiples pour l'ensemble des capteurs de la machine."""
+    capteurs = [c for c in g.columns if c not in META_COLS]
+    long = g.melt(
+        id_vars="cycle",
+        value_vars=capteurs,
+        var_name="Capteur",
+        value_name="Valeur",
+    )
+    chart = (
+        alt.Chart(long)
+        .mark_line()
+        .encode(
+            x=alt.X("cycle:Q", title="Cycle"),
+            y=alt.Y("Valeur:Q", title=None, scale=alt.Scale(zero=False)),
+            facet=alt.Facet("Capteur:N", columns=3, title=None),
+        )
+        .resolve_scale(y="independent")
+        .properties(width=220, height=120)
+    )
+    st.altair_chart(chart, use_container_width=False)
+
+@st.cache_data(show_spinner=False)
+def _trajectoire_api(_client: ApiClient, base_url: str, machine, g: pd.DataFrame) -> list[dict]:
+    return _client.predict_trajectory(
+        build_single_request(machine, g, _client.features())
+    )
 
 def render_trajectory_tabs(
-    client: ApiClient, machine, g: pd.DataFrame, thr: dict
+    client: ApiClient, machine, g: pd.DataFrame, thr: dict, key_prefix: str = "traj"
 ) -> None:
     """Sous-onglets Régression / Classification / Capteurs pour une machine donnée."""
     # Trajectoire cycle par cycle via l'API (fenêtre glissante côté serveur)
     try:
-        points = client.predict_trajectory(
-            build_single_request(machine, g, client.features())
-        )
+        points = _trajectoire_api(client, client.base_url, machine, g)
     except requests.RequestException as exc:
         st.error(f"Trajectoire indisponible (API) : {exc}")
         return
@@ -151,5 +177,7 @@ def render_trajectory_tabs(
                 .properties(width=300, height=160)
             )
             st.altair_chart(chart, use_container_width=False)
+            if st.button("Afficher tous les capteurs", key=f"{key_prefix}_btn_tous_capteurs"):
+                _dialog_tous_capteurs(g)
         else:
             st.info("Aucun capteur de démonstration disponible pour cette machine.")
