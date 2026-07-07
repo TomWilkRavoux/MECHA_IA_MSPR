@@ -67,28 +67,27 @@ def _trajectory_chart(
         )
     return alt.layer(*layers).properties(height=260)
 
-@st.dialog("Évolution de tous les capteurs", width="large")
-def _dialog_tous_capteurs(g: pd.DataFrame) -> None:
-    """Fenêtre modale : petits multiples pour l'ensemble des capteurs de la machine."""
-    capteurs = [c for c in g.columns if c not in META_COLS]
+def _sensors_facet_chart(
+    g: pd.DataFrame, sensors: list[str], columns: int, width: int, height: int
+):
+    """Petits multiples (un axe par capteur) pour la liste `sensors` de la machine."""
     long = g.melt(
         id_vars="cycle",
-        value_vars=capteurs,
+        value_vars=sensors,
         var_name="Capteur",
         value_name="Valeur",
     )
-    chart = (
+    return (
         alt.Chart(long)
         .mark_line()
         .encode(
             x=alt.X("cycle:Q", title="Cycle"),
             y=alt.Y("Valeur:Q", title=None, scale=alt.Scale(zero=False)),
-            facet=alt.Facet("Capteur:N", columns=4, title=None),
+            facet=alt.Facet("Capteur:N", columns=columns, title=None),
         )
         .resolve_scale(y="independent")
-        .properties(width=220, height=120)
+        .properties(width=width, height=height)
     )
-    st.altair_chart(chart, use_container_width=False)
 
 @st.cache_data(show_spinner=False)
 def _trajectoire_api(_client: ApiClient, base_url: str, machine, g: pd.DataFrame) -> list[dict]:
@@ -159,28 +158,22 @@ def render_trajectory_tabs(
         # Petits multiples : évolution de quelques capteurs (un axe par capteur)
         sensors = [s for s in ["T24", "T50", "P30", "Nf"] if s in g.columns]
         if "cycle" in g.columns and sensors:
-            long = g.melt(
-                id_vars="cycle",
-                value_vars=sensors,
-                var_name="Capteur",
-                value_name="Valeur",
+            st.altair_chart(
+                _sensors_facet_chart(g, sensors, columns=2, width=300, height=160),
+                use_container_width=False,
             )
-            chart = (
-                alt.Chart(long)
-                .mark_line()
-                .encode(
-                    x=alt.X("cycle:Q", title="Cycle"),
-                    y=alt.Y("Valeur:Q", title=None, scale=alt.Scale(zero=False)),
-                    facet=alt.Facet("Capteur:N", columns=2, title=None),
-                )
-                .resolve_scale(y="independent")
-                .properties(width=300, height=160)
-            )
-            col_graphes, col_bouton = st.columns([3, 1], vertical_alignment="center")
-            with col_graphes:
-                st.altair_chart(chart, use_container_width=False)
-            with col_bouton:
-                if st.button("Afficher tous les capteurs", key=f"{key_prefix}_btn_tous_capteurs"):
-                    _dialog_tous_capteurs(g)
+
+            # Le reste des capteurs se déplie sur place, sans recharger la page.
+            autres = [
+                c for c in g.columns if c not in META_COLS and c not in sensors
+            ]
+            if autres:
+                with st.expander(
+                    f"Voir tous les capteurs ({len(autres)} de plus)", icon=":material/add:"
+                ):
+                    st.altair_chart(
+                        _sensors_facet_chart(g, autres, columns=2, width=300, height=160),
+                        use_container_width=False,
+                    )
         else:
             st.info("Aucun capteur de démonstration disponible pour cette machine.")
