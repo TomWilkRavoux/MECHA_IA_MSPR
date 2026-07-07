@@ -8,21 +8,21 @@ maintenance prédictive. Elle complète `../plan.md` (feuille de route) et les n
 
 | Document | Contenu |
 |---|---|
-| [`architecture.md`](architecture.md) | **Schéma d'architecture global** (sources → centralisation → préparation/modélisation → service IA → exploitation), distinction **réel/cible**, flux temps réel/batch, **justification des choix** et limites d'industrialisation. |
-| [`mlops.md`](mlops.md) | **Automatisation de la chaîne** : ré-entraînement reproductible (`ml/train.py`), **gate qualité en CI** (`ml/validate_metrics.py`), **simulation de flux temps réel** (`sim/producer.py`), et perspectives d'industrialisation. |
-| [`repartition_donnees.md`](repartition_donnees.md) | Origine du dataset (NASA C-MAPSS), **justification de la répartition** en usines / lignes (`analyseGlobal.py`), et **consolidation** au vocabulaire MECHA (`fusionDatasetFinal.py`). |
-| [`dictionnaire_donnees.md`](dictionnaire_donnees.md) | **Dictionnaire de données par colonne** (identité, réglages, 21 capteurs C-MAPSS, cibles) : type, unité, description, domaine. Cohérence vérifiée par test. |
-| [`modele_baseline.md`](modele_baseline.md) | Baseline linéaire (régression logistique + linéaire) - plancher de performance exigé par le CDC. |
-| [`modele_random_forest.md`](modele_random_forest.md) | Random Forest - cœur de la solution (arbres, importances). |
-| [`modele_xgboost.md`](modele_xgboost.md) | Gradient Boosting (XGBoost) - état de l'art tabulaire. |
-| [`modele_lstm.md`](modele_lstm.md) | LSTM (Deep Learning, PyTorch/GPU) - exploitation de la temporalité. |
+| [`architecture.md`](01-architecture/architecture.md) | **Schéma d'architecture global** (sources → centralisation → préparation/modélisation → service IA → exploitation), distinction **réel/cible**, flux temps réel/batch, **justification des choix** et limites d'industrialisation. |
+| [`mlops.md`](04-mlops/mlops.md) | **Automatisation de la chaîne** : ré-entraînement reproductible (`ml/train.py`), **gate qualité en CI** (`ml/validate_metrics.py`), **simulation de flux temps réel** (`sim/producer.py`), et perspectives d'industrialisation. |
+| [`repartition_donnees.md`](02-donnees/repartition_donnees.md) | Origine du dataset (NASA C-MAPSS), **justification de la répartition** en usines / lignes (`analyseGlobal.py`), et **consolidation** au vocabulaire MECHA (`fusionDatasetFinal.py`). |
+| [`dictionnaire_donnees.md`](02-donnees/dictionnaire_donnees.md) | **Dictionnaire de données par colonne** (identité, réglages, 21 capteurs C-MAPSS, cibles) : type, unité, description, domaine. Cohérence vérifiée par test. |
+| [`modele_baseline.md`](03-modeles/modele_baseline.md) | Baseline linéaire (régression logistique + linéaire) - plancher de performance exigé par le CDC. |
+| [`modele_random_forest.md`](03-modeles/modele_random_forest.md) | Random Forest - cœur de la solution (arbres, importances). |
+| [`modele_xgboost.md`](03-modeles/modele_xgboost.md) | Gradient Boosting (XGBoost) - état de l'art tabulaire. |
+| [`modele_lstm.md`](03-modeles/modele_lstm.md) | LSTM (Deep Learning, PyTorch/GPU) - exploitation de la temporalité. |
 
 ### Exploitation applicative - dashboard
 
 | Document | Contenu |
 |---|---|
-| [`dashboard_technique.md`](dashboard_technique.md) | Architecture **frontend ↔ API découplée**, endpoints consommés, fenêtre glissante / calcul de trajectoire, structure du code, lancement, tests. |
-| [`dashboard_fonctionnel.md`](dashboard_fonctionnel.md) | **Guide utilisateur métier** : écrans, lecture des indicateurs, **justification du seuil 30**, règles d'alerte, limites d'usage. |
+| [`dashboard_technique.md`](05-exploitation/dashboard_technique.md) | Architecture **frontend ↔ API découplée**, endpoints consommés, fenêtre glissante / calcul de trajectoire, structure du code, lancement, tests. |
+| [`dashboard_fonctionnel.md`](05-exploitation/dashboard_fonctionnel.md) | **Guide utilisateur métier** : écrans, lecture des indicateurs, **justification du seuil 30**, règles d'alerte, limites d'usage. |
 
 ## Rappel des deux tâches
 

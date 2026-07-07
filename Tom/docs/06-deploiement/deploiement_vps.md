@@ -1,12 +1,12 @@
 # Déploiement sur VPS (Traefik + HTTPS) — runbook MECHA / MSPR TPRE841
 
 > Répond au CDC §8.2 (« Déploiement & exploitation : prérequis techniques ») et §8.3
-> (« Projection de mise en œuvre »). Complète [`mlops.md`](mlops.md) (automatisation de la
+> (« Projection de mise en œuvre »). Complète [`mlops.md`](../04-mlops/mlops.md) (automatisation de la
 > chaîne) : ici, la **mise en ligne** de la solution sur un serveur exposé à Internet.
 
 Ce document décrit, pas à pas, comment déployer la stack MECHA (API FastAPI + dashboard
 Streamlit) sur un VPS, derrière un **reverse proxy Traefik** avec **HTTPS automatique**
-(Let's Encrypt) et **authentification**. Orchestrateur : [`../docker-compose.prod.yml`](../docker-compose.prod.yml).
+(Let's Encrypt) et **authentification**. Orchestrateur : [`../docker-compose.prod.yml`](../../docker-compose.prod.yml).
 
 ## 1. Architecture de déploiement
 
