@@ -10,7 +10,7 @@ import altair as alt
 import pandas as pd
 import requests
 import streamlit as st
-from api_client import ApiClient, build_single_request
+from api_client import ApiClient, build_single_request, META_COLS
 
 from ..style.css import status_pill
 
@@ -67,16 +67,41 @@ def _trajectory_chart(
         )
     return alt.layer(*layers).properties(height=260)
 
+def _sensors_facet_chart(
+    g: pd.DataFrame, sensors: list[str], columns: int, width: int, height: int
+):
+    """Petits multiples (un axe par capteur) pour la liste `sensors` de la machine."""
+    long = g.melt(
+        id_vars="cycle",
+        value_vars=sensors,
+        var_name="Capteur",
+        value_name="Valeur",
+    )
+    return (
+        alt.Chart(long)
+        .mark_line()
+        .encode(
+            x=alt.X("cycle:Q", title="Cycle"),
+            y=alt.Y("Valeur:Q", title=None, scale=alt.Scale(zero=False)),
+            facet=alt.Facet("Capteur:N", columns=columns, title=None),
+        )
+        .resolve_scale(y="independent")
+        .properties(width=width, height=height)
+    )
+
+@st.cache_data(show_spinner=False)
+def _trajectoire_api(_client: ApiClient, base_url: str, machine, g: pd.DataFrame) -> list[dict]:
+    return _client.predict_trajectory(
+        build_single_request(machine, g, _client.features())
+    )
 
 def render_trajectory_tabs(
-    client: ApiClient, machine, g: pd.DataFrame, thr: dict
+    client: ApiClient, machine, g: pd.DataFrame, thr: dict, key_prefix: str = "traj"
 ) -> None:
     """Sous-onglets Régression / Classification / Capteurs pour une machine donnée."""
     # Trajectoire cycle par cycle via l'API (fenêtre glissante côté serveur)
     try:
-        points = client.predict_trajectory(
-            build_single_request(machine, g, client.features())
-        )
+        points = _trajectoire_api(client, client.base_url, machine, g)
     except requests.RequestException as exc:
         st.error(f"Trajectoire indisponible (API) : {exc}")
         return
@@ -133,23 +158,22 @@ def render_trajectory_tabs(
         # Petits multiples : évolution de quelques capteurs (un axe par capteur)
         sensors = [s for s in ["T24", "T50", "P30", "Nf"] if s in g.columns]
         if "cycle" in g.columns and sensors:
-            long = g.melt(
-                id_vars="cycle",
-                value_vars=sensors,
-                var_name="Capteur",
-                value_name="Valeur",
+            st.altair_chart(
+                _sensors_facet_chart(g, sensors, columns=2, width=300, height=160),
+                use_container_width=False,
             )
-            chart = (
-                alt.Chart(long)
-                .mark_line()
-                .encode(
-                    x=alt.X("cycle:Q", title="Cycle"),
-                    y=alt.Y("Valeur:Q", title=None, scale=alt.Scale(zero=False)),
-                    facet=alt.Facet("Capteur:N", columns=2, title=None),
-                )
-                .resolve_scale(y="independent")
-                .properties(width=300, height=160)
-            )
-            st.altair_chart(chart, use_container_width=False)
+
+            # Le reste des capteurs se déplie sur place, sans recharger la page.
+            autres = [
+                c for c in g.columns if c not in META_COLS and c not in sensors
+            ]
+            if autres:
+                with st.expander(
+                    f"Voir tous les capteurs ({len(autres)} de plus)", icon=":material/add:"
+                ):
+                    st.altair_chart(
+                        _sensors_facet_chart(g, autres, columns=2, width=300, height=160),
+                        use_container_width=False,
+                    )
         else:
             st.info("Aucun capteur de démonstration disponible pour cette machine.")
