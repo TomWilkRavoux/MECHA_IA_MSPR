@@ -208,11 +208,12 @@ jobs:
               echo "token dans les variables CircleCI. Job ignoré (non bloquant)."
               exit 0
             fi
-            SCANNER=sonar-scanner-cli-7.0.2.4839-linux-x64
+            VERSION=7.0.2.4839
             curl -sSLo /tmp/scanner.zip \
-              "https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/${SCANNER}.zip"
+              "https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-${VERSION}-linux-x64.zip"
             unzip -q /tmp/scanner.zip -d /tmp
-            "/tmp/${SCANNER}/bin/sonar-scanner"
+            # Le zip -cli s'extrait dans un dossier SANS le suffixe -cli.
+            "/tmp/sonar-scanner-${VERSION}-linux-x64/bin/sonar-scanner"
 
 workflows:
   ci:
