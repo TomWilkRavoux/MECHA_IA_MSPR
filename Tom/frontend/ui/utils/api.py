@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import pandas as pd
 import requests
-
 from api_client import ApiClient, build_requests
 
 from ..style.theme import DEFAULT_THRESHOLDS, STATUS_LABEL

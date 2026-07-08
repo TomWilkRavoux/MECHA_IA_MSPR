@@ -21,7 +21,7 @@ from __future__ import annotations
 import argparse
 import json
 import platform
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import joblib
 import numpy as np
@@ -53,9 +53,7 @@ def _run_epoch(model, x, y, loss_fn, opt=None, batch=512) -> float:
     return total / n
 
 
-def train_head(
-    xtr, ytr, xva, yva, loss_fn, device, *, epochs=30, patience=5, batch=512
-) -> LSTMNet:
+def train_head(xtr, ytr, xva, yva, loss_fn, device, *, epochs=30, patience=5, batch=512) -> LSTMNet:
     """Entraîne une tête LSTM avec early stopping (restaure les meilleurs poids)."""
     model = LSTMNet().to(device)
     to_t = lambda a: torch.as_tensor(a, dtype=torch.float32, device=device)  # noqa: E731
@@ -67,7 +65,11 @@ def train_head(
         va = _run_epoch(model, xva, yva, loss_fn, None, batch)
         print(f"    epoch {ep + 1:2d}/{epochs}  loss={tr:.4f}  val_loss={va:.4f}")
         if va < best:
-            best, best_state, wait = va, {k: v.detach().clone() for k, v in model.state_dict().items()}, 0
+            best, best_state, wait = (
+                va,
+                {k: v.detach().clone() for k, v in model.state_dict().items()},
+                0,
+            )
         else:
             wait += 1
             if wait >= patience:
@@ -112,15 +114,25 @@ def fit(device: str, *, epochs: int, seed: int, out_dir) -> tuple[LSTMNet, LSTMN
     pos_w = float((yw_tr_clf == 0).sum() / max((yw_tr_clf == 1).sum(), 1))
     print(f"  [classif] pos_weight={pos_w:.2f}")
     clf = train_head(
-        xw_tr_clf, yw_tr_clf, xw_va_clf, yw_va_clf,
+        xw_tr_clf,
+        yw_tr_clf,
+        xw_va_clf,
+        yw_va_clf,
         nn.BCEWithLogitsLoss(pos_weight=torch.tensor(pos_w, device=device)),
-        device, epochs=epochs,
+        device,
+        epochs=epochs,
     )
     torch.save(clf.state_dict(), out_dir / "lstm_classifier.pt")
 
     print("  [régression] MSE")
     reg = train_head(
-        xw_tr_rul, yw_tr_rul, xw_va_rul, yw_va_rul, nn.MSELoss(), device, epochs=epochs,
+        xw_tr_rul,
+        yw_tr_rul,
+        xw_va_rul,
+        yw_va_rul,
+        nn.MSELoss(),
+        device,
+        epochs=epochs,
     )
     torch.save(reg.state_dict(), out_dir / "lstm_regressor.pt")
     return clf, reg, scaler
@@ -132,7 +144,7 @@ def fit(device: str, *, epochs: int, seed: int, out_dir) -> tuple[LSTMNet, LSTMN
 def evaluate(clf: LSTMNet, reg: LSTMNet, scaler, device: str) -> dict:
     """Évalue les deux têtes sur la dernière fenêtre de chaque machine test."""
     ev = prep.test_last_cycle_eval()
-    rul_by_id = dict(zip(ev["machine_id"].to_list(), ev["RUL_true"].to_list()))
+    rul_by_id = dict(zip(ev["machine_id"].to_list(), ev["RUL_true"].to_list(), strict=True))
     xw, ids = prep.make_test_windows(prep.load_test(), scaler=scaler)
     y_rul = np.array([rul_by_id[i] for i in ids], dtype=float)
     y_atrisk = (y_rul <= prep.RISK_THRESHOLD).astype(int)
@@ -155,7 +167,7 @@ def evaluate(clf: LSTMNet, reg: LSTMNet, scaler, device: str) -> dict:
 def write_metrics(result: dict, out_dir, *, mode: str, device: str, seed: int, epochs: int) -> None:
     """Journalise les métriques + métadonnées de run dans `out_dir/metrics.json`."""
     payload = {
-        "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "generated_at": datetime.now(UTC).isoformat(timespec="seconds"),
         "mode": mode,
         "device": device,
         "python": platform.python_version(),
@@ -176,13 +188,19 @@ def write_metrics(result: dict, out_dir, *, mode: str, device: str, seed: int, e
 # ----------------------------------------------------------------------------
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="Entraînement/évaluation du LSTM MECHA.")
-    p.add_argument("--eval-only", action="store_true",
-                   help="Recharge les artefacts existants et évalue seulement (pas de ré-entraînement).")
+    p.add_argument(
+        "--eval-only",
+        action="store_true",
+        help="Recharge les artefacts existants et évalue seulement (pas de ré-entraînement).",
+    )
     p.add_argument("--epochs", type=int, default=30, help="Nombre d'epochs (défaut 30).")
     p.add_argument("--seed", type=int, default=42, help="Graine aléatoire (défaut 42).")
     p.add_argument("--quick", action="store_true", help="Smoke : 2 epochs (vérifie le pipeline).")
-    p.add_argument("--no-promote", action="store_true",
-                   help="Enregistre le run sans le promouvoir courant (la baseline reste servie).")
+    p.add_argument(
+        "--no-promote",
+        action="store_true",
+        help="Enregistre le run sans le promouvoir courant (la baseline reste servie).",
+    )
     args = p.parse_args(argv)
 
     epochs = 2 if args.quick else args.epochs
@@ -213,8 +231,12 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  run enregistré → registry.json (courant : {served})")
 
     c, r = result["classification"], result["regression"]
-    print(f"\n  Classification  F1={c['f1']:.3f}  recall={c['recall']:.3f}  AUC={c.get('roc_auc', float('nan')):.3f}")
-    print(f"  Régression      RMSE={r['RMSE']:.2f}  MAE={r['MAE']:.2f}  R²={r['R2']:.3f}  NASA={r['NASA']:.0f}")
+    print(
+        f"\n  Classification  F1={c['f1']:.3f}  recall={c['recall']:.3f}  AUC={c.get('roc_auc', float('nan')):.3f}"
+    )
+    print(
+        f"  Régression      RMSE={r['RMSE']:.2f}  MAE={r['MAE']:.2f}  R²={r['R2']:.3f}  NASA={r['NASA']:.0f}"
+    )
     return 0
 
 

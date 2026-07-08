@@ -22,8 +22,7 @@ from ml.prep import FEATURES, MODELS_DIR
 FIXTURE = Path(__file__).parent / "fixtures" / "mecha_test_sample.csv"
 
 _MODELS_PRESENT = all(
-    (MODELS_DIR / f).exists()
-    for f in ("scaler.joblib", "lstm_classifier.pt", "lstm_regressor.pt")
+    (MODELS_DIR / f).exists() for f in ("scaler.joblib", "lstm_classifier.pt", "lstm_regressor.pt")
 )
 needs_models = pytest.mark.skipif(not _MODELS_PRESENT, reason="modèles LSTM absents de models/")
 

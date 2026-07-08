@@ -11,6 +11,9 @@ from ..style.theme import ALERT_ORDER, STATUS_COLOR, STATUS_LABEL, STATUS_PILL
 # Libellé de statut -> couleur d'encre (pour colorer la colonne « Alerte »).
 _LABEL_FG = {STATUS_LABEL[k]: STATUS_PILL[k][1] for k in STATUS_LABEL}
 
+# Libellé de la colonne « proba de risque » (réutilisé tooltip / tableau).
+_PROBA_LABEL = "Proba risque"
+
 
 def _render_kpis(res: pd.DataFrame) -> None:
     counts = res["alert_level"].value_counts()
@@ -39,7 +42,7 @@ def _render_urgency_chart(res: pd.DataFrame) -> None:
         tooltip=[
             alt.Tooltip("machine_id:N", title="Machine"),
             alt.Tooltip("rul_predicted:Q", title="RUL", format=".1f"),
-            alt.Tooltip("risk_probability:Q", title="Proba risque", format=".2f"),
+            alt.Tooltip("risk_probability:Q", title=_PROBA_LABEL, format=".2f"),
             alt.Tooltip("badge:N", title="Alerte"),
         ],
     )
@@ -48,7 +51,9 @@ def _render_urgency_chart(res: pd.DataFrame) -> None:
         x="rul_predicted:Q",
         text=alt.Text("rul_predicted:Q", format=".0f"),
     )
-    st.altair_chart((bars + labels).properties(height=max(240, 26 * len(top))), use_container_width=True)
+    st.altair_chart(
+        (bars + labels).properties(height=max(240, 26 * len(top))), use_container_width=True
+    )
 
 
 def _render_table(res: pd.DataFrame) -> None:
@@ -62,7 +67,7 @@ def _render_table(res: pd.DataFrame) -> None:
             "ligne_production": "Ligne",
             "badge": "Alerte",
             "rul_predicted": "RUL (cycles)",
-            "risk_probability": "Proba risque",
+            "risk_probability": _PROBA_LABEL,
         }
     )
     styled = view.style.map(
@@ -75,7 +80,9 @@ def _render_table(res: pd.DataFrame) -> None:
         hide_index=True,
         column_config={
             "RUL (cycles)": st.column_config.NumberColumn(format="%.1f"),
-            "Proba risque": st.column_config.ProgressColumn(format="%.2f", min_value=0.0, max_value=1.0),
+            _PROBA_LABEL: st.column_config.ProgressColumn(
+                format="%.2f", min_value=0.0, max_value=1.0
+            ),
         },
     )
     st.download_button(

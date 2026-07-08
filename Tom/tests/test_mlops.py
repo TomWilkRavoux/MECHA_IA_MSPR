@@ -13,7 +13,6 @@ from ml.registry import next_registry
 from ml.validate_metrics import check
 from sim.producer import build_request, history_upto, machine_frames, select_machines
 
-
 # ---------------------------------------------------------------------------
 # Gate de validation (ml.validate_metrics.check)
 # ---------------------------------------------------------------------------

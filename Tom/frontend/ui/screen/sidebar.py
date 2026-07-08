@@ -26,9 +26,7 @@ def render() -> tuple[ApiClient, pd.DataFrame | None, int]:
     try:
         h = client.health()
         if h.get("models_loaded"):
-            st.sidebar.success(
-                f"API OK · device `{h['device']}` · seuil {h['risk_threshold']}"
-            )
+            st.sidebar.success(f"API OK · device `{h['device']}` · seuil {h['risk_threshold']}")
         else:
             st.sidebar.warning("API joignable mais modèles non chargés.")
     except requests.RequestException:
@@ -36,23 +34,17 @@ def render() -> tuple[ApiClient, pd.DataFrame | None, int]:
 
     st.sidebar.divider()
     st.sidebar.subheader("Source de données")
-    src = st.sidebar.radio(
-        "Cycles machines", ["Jeu de démonstration", "Importer un CSV"], index=0
-    )
+    src = st.sidebar.radio("Cycles machines", ["Jeu de démonstration", "Importer un CSV"], index=0)
 
     df: pd.DataFrame | None = None
     if src == "Jeu de démonstration":
         if DEMO_CSV.exists():
             df = pd.read_csv(DEMO_CSV)
-            st.sidebar.caption(
-                f"{DEMO_CSV.name} · {df['machine_id'].nunique()} machines"
-            )
+            st.sidebar.caption(f"{DEMO_CSV.name} · {df['machine_id'].nunique()} machines")
         else:
             st.sidebar.error(f"Fichier de démo introuvable : {DEMO_CSV}")
     else:
-        up = st.sidebar.file_uploader(
-            "CSV (machine_id, cycle, + variables capteurs)", type="csv"
-        )
+        up = st.sidebar.file_uploader("CSV (machine_id, cycle, + variables capteurs)", type="csv")
         if up is not None:
             df = pd.read_csv(up)
 
@@ -68,8 +60,6 @@ def render() -> tuple[ApiClient, pd.DataFrame | None, int]:
                 sel = st.sidebar.multiselect(label, opts, default=opts)
                 df = df[df[col].isin(sel)]
         total = df["machine_id"].nunique()
-        n_max = st.sidebar.slider(
-            "Machines à analyser", 1, int(total), min(40, int(total))
-        )
+        n_max = st.sidebar.slider("Machines à analyser", 1, int(total), min(40, int(total)))
 
     return client, df, n_max
