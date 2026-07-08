@@ -234,7 +234,6 @@ workflows:
       # attend la validation E2E pour ne s'exécuter qu'une fois le reste au vert.
       - sonarcloud:
           requires:
-            - test-ia
             - e2e
 
   # Livraison continue : au push d'un tag vX.Y.Z, on (re)build les images de release.
