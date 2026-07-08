@@ -36,8 +36,14 @@ DEFAULT_CSV = ROOT / "assets" / "KaggleDataset" / "mecha_test_classification.csv
 DEFAULT_OUT = ROOT / "output" / "alertes_live.csv"
 META_COLS = ["machine_id", "subset", "usine", "ligne_production", "unit", "cycle"]
 ALERT_COLS = [
-    "timestamp", "tick", "machine_id", "usine", "ligne_production",
-    "alert_level", "risk_probability", "rul_predicted",
+    "timestamp",
+    "tick",
+    "machine_id",
+    "usine",
+    "ligne_production",
+    "alert_level",
+    "risk_probability",
+    "rul_predicted",
 ]
 
 
@@ -76,8 +82,11 @@ def build_request(machine_id: str, rows: pd.DataFrame, features: list[str]) -> d
 # ----------------------------------------------------------------------------
 # Boucle de simulation
 # ----------------------------------------------------------------------------
-_LEVEL_STYLE = {"ok": "\033[32m● ok\033[0m", "warning": "\033[33m▲ warning\033[0m",
-                "critical": "\033[31m■ critical\033[0m"}
+_LEVEL_STYLE = {
+    "ok": "\033[32m● ok\033[0m",
+    "warning": "\033[33m▲ warning\033[0m",
+    "critical": "\033[31m■ critical\033[0m",
+}
 
 
 def _wait_backend(api_url: str, retries: int = 10) -> None:
@@ -156,24 +165,29 @@ def run(argv: list[str] | None = None) -> int:
                 prev = last_level.get(mid, "ok")
                 order = {"ok": 0, "warning": 1, "critical": 2}
                 if order[lvl] > order[prev]:
-                    writer.writerow({
-                        "timestamp": datetime.now(UTC).isoformat(timespec="seconds"),
-                        "tick": tick, "machine_id": mid,
-                        "usine": meta[mid].get("usine", ""),
-                        "ligne_production": meta[mid].get("ligne_production", ""),
-                        "alert_level": lvl,
-                        "risk_probability": res["risk_probability"],
-                        "rul_predicted": res["rul_predicted"],
-                    })
+                    writer.writerow(
+                        {
+                            "timestamp": datetime.now(UTC).isoformat(timespec="seconds"),
+                            "tick": tick,
+                            "machine_id": mid,
+                            "usine": meta[mid].get("usine", ""),
+                            "ligne_production": meta[mid].get("ligne_production", ""),
+                            "alert_level": lvl,
+                            "risk_probability": res["risk_probability"],
+                            "rul_predicted": res["rul_predicted"],
+                        }
+                    )
                     fh.flush()
                     n_alerts += 1
                 last_level[mid] = lvl
 
             crit = [m for m in active if results[m]["alert_level"] == "critical"]
-            line = (f"tick {tick:3d}/{horizon}  actives={len(active):2d}  "
-                    f"{_LEVEL_STYLE['ok']} {counts['ok']:2d}  "
-                    f"{_LEVEL_STYLE['warning']} {counts['warning']:2d}  "
-                    f"{_LEVEL_STYLE['critical']} {counts['critical']:2d}")
+            line = (
+                f"tick {tick:3d}/{horizon}  actives={len(active):2d}  "
+                f"{_LEVEL_STYLE['ok']} {counts['ok']:2d}  "
+                f"{_LEVEL_STYLE['warning']} {counts['warning']:2d}  "
+                f"{_LEVEL_STYLE['critical']} {counts['critical']:2d}"
+            )
             if crit:
                 line += "   →critiques: " + ", ".join(str(m) for m in crit[:6])
             print(line)
@@ -183,7 +197,9 @@ def run(argv: list[str] | None = None) -> int:
     finally:
         fh.close()
 
-    print(f"\nTerminé — {n_alerts} montée(s) d'alerte journalisée(s) dans {args.out.relative_to(ROOT)}")
+    print(
+        f"\nTerminé — {n_alerts} montée(s) d'alerte journalisée(s) dans {args.out.relative_to(ROOT)}"
+    )
     return 0
 
 

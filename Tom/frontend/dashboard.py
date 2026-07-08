@@ -20,25 +20,21 @@ from ui.screen import ligne, machine, parc, sidebar, unitaire
 from ui.style import css
 from ui.utils.api import get_thresholds, run_predictions
 
-st.set_page_config(
-    page_title="MECHA - Maintenance prédictive", page_icon="🔧", layout="wide"
-)
+st.set_page_config(page_title="MECHA - Maintenance prédictive", page_icon="🔧", layout="wide")
 
-PARK_HINT = "Cliquez sur **Analyser le parc** pour lancer les prédictions sur l'ensemble sélectionné."
+PARK_HINT = (
+    "Cliquez sur **Analyser le parc** pour lancer les prédictions sur l'ensemble sélectionné."
+)
 
 
 def main() -> None:
     css.apply()
     client, df, n_max = sidebar.render()
     st.title("Maintenance prédictive / supervision du parc")
-    st.caption(
-        "Prédiction de l'état `at_risk` et du RUL (LSTM) pour prioriser la maintenance."
-    )
+    st.caption("Prédiction de l'état `at_risk` et du RUL (LSTM) pour prioriser la maintenance.")
 
     if df is None:
-        st.info(
-            "Sélectionnez une source de données dans la barre latérale pour démarrer."
-        )
+        st.info("Sélectionnez une source de données dans la barre latérale pour démarrer.")
         return
 
     thr = get_thresholds(client)

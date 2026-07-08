@@ -54,11 +54,15 @@ class BatchPredictRequest(BaseModel):
 class PredictResponse(BaseModel):
     machine_id: str
     at_risk: bool = Field(..., description="Décision de la tête classification (proba >= 0.5).")
-    risk_probability: float = Field(..., ge=0.0, le=1.0, description="Probabilité classe 'à risque'.")
+    risk_probability: float = Field(
+        ..., ge=0.0, le=1.0, description="Probabilité classe 'à risque'."
+    )
     rul_predicted: float = Field(..., description="RUL estimé (cycles restants avant défaillance).")
     alert_level: str = Field(..., description="ok | warning | critical (règle métier).")
     threshold: int = Field(RISK_THRESHOLD, description="Seuil at_risk utilisé.")
-    n_cycles_used: int = Field(..., description="Nombre de cycles réellement utilisés (<= SEQ_LEN).")
+    n_cycles_used: int = Field(
+        ..., description="Nombre de cycles réellement utilisés (<= SEQ_LEN)."
+    )
 
 
 class BatchPredictResponse(BaseModel):
@@ -70,7 +74,9 @@ class TrajectoryPoint(BaseModel):
 
     cycle_index: int = Field(..., description="Position du cycle dans la série fournie (0-indexé).")
     at_risk: bool = Field(..., description="Décision de la tête classification (proba >= 0.5).")
-    risk_probability: float = Field(..., ge=0.0, le=1.0, description="Probabilité classe 'à risque'.")
+    risk_probability: float = Field(
+        ..., ge=0.0, le=1.0, description="Probabilité classe 'à risque'."
+    )
     rul_predicted: float = Field(..., description="RUL estimé à ce cycle (cycles restants).")
     alert_level: str = Field(..., description="ok | warning | critical (règle métier).")
 
@@ -88,4 +94,6 @@ class HealthResponse(BaseModel):
     n_features: int
     risk_threshold: int = Field(..., description="Seuil at_risk (RUL <= seuil).")
     critical_rul: int = Field(..., description="RUL en-deçà duquel l'alerte passe 'critical'.")
-    critical_proba: float = Field(..., description="Proba au-delà de laquelle l'alerte passe 'critical'.")
+    critical_proba: float = Field(
+        ..., description="Proba au-delà de laquelle l'alerte passe 'critical'."
+    )

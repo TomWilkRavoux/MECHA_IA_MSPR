@@ -27,9 +27,7 @@ def render(client: ApiClient, df: pd.DataFrame, thr: dict) -> None:
 
     meta = [str(g[c].iloc[0]) for c in ["usine", "ligne_production"] if c in g.columns]
     if meta:
-        st.caption(
-            "Localisation : " + " · ".join(meta) + f" · {len(g)} cycles observés"
-        )
+        st.caption("Localisation : " + " · ".join(meta) + f" · {len(g)} cycles observés")
 
     try:
         stats = client.predict(build_single_request(machine, g, client.features()))
@@ -39,4 +37,4 @@ def render(client: ApiClient, df: pd.DataFrame, thr: dict) -> None:
 
     render_prediction_metrics(stats, extra=True)
     st.divider()
-    render_trajectory_tabs(client, machine, g, thr,key_prefix="unitaire")
+    render_trajectory_tabs(client, machine, g, thr, key_prefix="unitaire")

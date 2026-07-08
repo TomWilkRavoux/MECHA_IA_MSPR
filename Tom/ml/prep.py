@@ -33,15 +33,34 @@ FIG_DIR.mkdir(parents=True, exist_ok=True)
 KEYS = ["machine_id", "subset", "usine", "ligne_production", "unit", "cycle"]
 SETTINGS = ["setting_1", "setting_2", "setting_3"]
 SENSORS = [
-    "T2", "T24", "T30", "T50", "P2", "P15", "P30", "Nf", "Nc", "epr", "Ps30",
-    "phi", "NRf", "NRc", "BPR", "farB", "htBleed", "Nf_dmd", "PCNfR_dmd", "W31", "W32",
+    "T2",
+    "T24",
+    "T30",
+    "T50",
+    "P2",
+    "P15",
+    "P30",
+    "Nf",
+    "Nc",
+    "epr",
+    "Ps30",
+    "phi",
+    "NRf",
+    "NRc",
+    "BPR",
+    "farB",
+    "htBleed",
+    "Nf_dmd",
+    "PCNfR_dmd",
+    "W31",
+    "W32",
 ]
 FEATURES = SETTINGS + SENSORS
 
 # --- Hyperparamètres métier ---
-RISK_THRESHOLD = 30   # at_risk = 1 si RUL <= 30
-RUL_CAP = 125         # clipping piecewise du RUL (convention C-MAPSS)
-SEQ_LEN = 30          # longueur de fenêtre pour le LSTM
+RISK_THRESHOLD = 30  # at_risk = 1 si RUL <= 30
+RUL_CAP = 125  # clipping piecewise du RUL (convention C-MAPSS)
+SEQ_LEN = 30  # longueur de fenêtre pour le LSTM
 
 
 # ----------------------------------------------------------------------------
@@ -187,11 +206,7 @@ def test_last_cycle_eval() -> pl.DataFrame:
     """
     test = load_test()
     rul_true = load_rul_true().select(["machine_id", "RUL_true"])
-    last = (
-        test.sort("cycle")
-        .group_by("machine_id", maintain_order=True)
-        .last()
-    )
+    last = test.sort("cycle").group_by("machine_id", maintain_order=True).last()
     merged = last.join(rul_true, on="machine_id", how="inner")
     return merged.with_columns(
         (pl.col("RUL_true") <= RISK_THRESHOLD).cast(pl.Int8).alias("at_risk_true")

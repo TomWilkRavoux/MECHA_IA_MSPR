@@ -198,11 +198,16 @@ def main(argv: list[str] | None = None) -> int:
 
     pp = sub.add_parser("promote", help="Fixe le run courant (pointeur servi).")
     pp.add_argument("run_id")
-    pp.add_argument("--to-baseline", action="store_true",
-                    help="Copie aussi les artefacts sur la baseline plate committée (prod).")
+    pp.add_argument(
+        "--to-baseline",
+        action="store_true",
+        help="Copie aussi les artefacts sur la baseline plate committée (prod).",
+    )
     pp.set_defaults(fn=_cmd_promote)
 
-    sub.add_parser("use-baseline", help="Rebascule le pointeur sur la baseline plate.").set_defaults(fn=_cmd_use_baseline)
+    sub.add_parser(
+        "use-baseline", help="Rebascule le pointeur sur la baseline plate."
+    ).set_defaults(fn=_cmd_use_baseline)
 
     args = p.parse_args(argv)
     return args.fn(args)

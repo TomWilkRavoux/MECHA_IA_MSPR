@@ -47,8 +47,16 @@ def check(metrics: dict, thresholds: dict) -> list[dict]:
             else:
                 bound, op = rule["max"], "<="
                 ok = value is not None and value <= bound
-            rows.append({"group": group, "metric": metric, "value": value,
-                         "op": op, "bound": bound, "ok": ok})
+            rows.append(
+                {
+                    "group": group,
+                    "metric": metric,
+                    "value": value,
+                    "op": op,
+                    "bound": bound,
+                    "ok": ok,
+                }
+            )
     return rows
 
 

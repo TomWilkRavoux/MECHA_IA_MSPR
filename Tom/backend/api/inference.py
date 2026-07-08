@@ -60,7 +60,7 @@ class ModelService:
         `arr` est déjà normalisée. Si moins de SEQ_LEN cycles sont disponibles, on
         répète le premier cycle réel de la fenêtre (cohérent avec l'entraînement).
         """
-        w = arr[max(0, end - SEQ_LEN):end]
+        w = arr[max(0, end - SEQ_LEN) : end]
         n_real = len(w)
         if n_real < SEQ_LEN:
             pad = np.repeat(w[:1], SEQ_LEN - n_real, axis=0)

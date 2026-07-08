@@ -64,9 +64,7 @@ _PILL_CSS = "".join(
 
 def apply() -> None:
     """Injecte la feuille de style (une fois par run)."""
-    st.markdown(
-        _CSS.replace("</style>", _PILL_CSS + "</style>"), unsafe_allow_html=True
-    )
+    st.markdown(_CSS.replace("</style>", _PILL_CSS + "</style>"), unsafe_allow_html=True)
 
 
 def status_pill(level: str) -> str:

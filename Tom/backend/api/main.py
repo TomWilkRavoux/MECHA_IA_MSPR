@@ -77,9 +77,7 @@ def _predict_one(req: PredictRequest) -> PredictResponse:
 def predict(req: PredictRequest) -> PredictResponse:
     """Prédit l'état `at_risk` et le RUL d'une machine à partir de ses cycles."""
     if not service.ready:
-        raise HTTPException(
-            status_code=503, detail="Modèles non chargés (voir /health)."
-        )
+        raise HTTPException(status_code=503, detail="Modèles non chargés (voir /health).")
     return _predict_one(req)
 
 
@@ -91,9 +89,7 @@ def predict_batch(req: BatchPredictRequest) -> BatchPredictResponse:
     contrat identique à N appels `/predict`, mais un forward unique au lieu de N.
     """
     if not service.ready:
-        raise HTTPException(
-            status_code=503, detail="Modèles non chargés (voir /health)."
-        )
+        raise HTTPException(status_code=503, detail="Modèles non chargés (voir /health).")
     outs = service.predict_many([[c.values for c in m.cycles] for m in req.machines])
     return BatchPredictResponse(
         results=[
@@ -107,8 +103,6 @@ def predict_batch(req: BatchPredictRequest) -> BatchPredictResponse:
 def predict_trajectory(req: PredictRequest) -> TrajectoryResponse:
     """Trajectoire cycle par cycle d'UNE machine (RUL et proba de risque au fil des cycles)."""
     if not service.ready:
-        raise HTTPException(
-            status_code=503, detail="Modèles non chargés (voir /health)."
-        )
+        raise HTTPException(status_code=503, detail="Modèles non chargés (voir /health).")
     points = service.predict_trajectory([c.values for c in req.cycles])
     return TrajectoryResponse(machine_id=req.machine_id, points=points)

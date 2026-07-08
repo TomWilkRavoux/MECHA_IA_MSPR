@@ -48,7 +48,9 @@ def _render_urgency_chart(res: pd.DataFrame) -> None:
         x="rul_predicted:Q",
         text=alt.Text("rul_predicted:Q", format=".0f"),
     )
-    st.altair_chart((bars + labels).properties(height=max(240, 26 * len(top))), use_container_width=True)
+    st.altair_chart(
+        (bars + labels).properties(height=max(240, 26 * len(top))), use_container_width=True
+    )
 
 
 def _render_table(res: pd.DataFrame) -> None:
@@ -75,7 +77,9 @@ def _render_table(res: pd.DataFrame) -> None:
         hide_index=True,
         column_config={
             "RUL (cycles)": st.column_config.NumberColumn(format="%.1f"),
-            "Proba risque": st.column_config.ProgressColumn(format="%.2f", min_value=0.0, max_value=1.0),
+            "Proba risque": st.column_config.ProgressColumn(
+                format="%.2f", min_value=0.0, max_value=1.0
+            ),
         },
     )
     st.download_button(

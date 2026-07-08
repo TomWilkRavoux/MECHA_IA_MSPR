@@ -36,9 +36,7 @@ def render_prediction_metrics(stats, extra: bool = False) -> None:
         c5.metric("Seuil at_risk", f"{stats.get('threshold', '-')} cycles")
 
 
-def _trajectory_chart(
-    traj: pd.DataFrame, value: str, y_title: str, rules: list[tuple[float, str]]
-):
+def _trajectory_chart(traj: pd.DataFrame, value: str, y_title: str, rules: list[tuple[float, str]]):
     """Courbe `value` vs cycle + règles horizontales repères (seuil, valeur, libellé)."""
     line = (
         alt.Chart(traj)
@@ -55,17 +53,14 @@ def _trajectory_chart(
     layers = [line]
     for y, label in rules:
         rule_df = pd.DataFrame({"y": [y], "label": [label]})
-        layers.append(
-            alt.Chart(rule_df)
-            .mark_rule(strokeDash=[5, 4], color="#888")
-            .encode(y="y:Q")
-        )
+        layers.append(alt.Chart(rule_df).mark_rule(strokeDash=[5, 4], color="#888").encode(y="y:Q"))
         layers.append(
             alt.Chart(rule_df)
             .mark_text(align="left", dx=4, dy=-4, color="#888")
             .encode(y="y:Q", text="label:N")
         )
     return alt.layer(*layers).properties(height=260)
+
 
 def _sensors_facet_chart(
     g: pd.DataFrame, sensors: list[str], columns: int, width: int, height: int
@@ -89,11 +84,11 @@ def _sensors_facet_chart(
         .properties(width=width, height=height)
     )
 
+
 @st.cache_data(show_spinner=False)
 def _trajectoire_api(_client: ApiClient, base_url: str, machine, g: pd.DataFrame) -> list[dict]:
-    return _client.predict_trajectory(
-        build_single_request(machine, g, _client.features())
-    )
+    return _client.predict_trajectory(build_single_request(machine, g, _client.features()))
+
 
 def render_trajectory_tabs(
     client: ApiClient, machine, g: pd.DataFrame, thr: dict, key_prefix: str = "traj"
@@ -164,9 +159,7 @@ def render_trajectory_tabs(
             )
 
             # Le reste des capteurs se déplie sur place, sans recharger la page.
-            autres = [
-                c for c in g.columns if c not in META_COLS and c not in sensors
-            ]
+            autres = [c for c in g.columns if c not in META_COLS and c not in sensors]
             if autres:
                 with st.expander(
                     f"Voir tous les capteurs ({len(autres)} de plus)", icon=":material/add:"

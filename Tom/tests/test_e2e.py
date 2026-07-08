@@ -37,9 +37,7 @@ def _api_reachable() -> bool:
 
 
 # Skip propre si aucune API n'écoute (ex. `pytest` lancé sans conteneur).
-pytestmark = pytest.mark.skipif(
-    not _api_reachable(), reason=f"API E2E injoignable sur {BASE_URL}"
-)
+pytestmark = pytest.mark.skipif(not _api_reachable(), reason=f"API E2E injoignable sur {BASE_URL}")
 
 
 @pytest.fixture(scope="module")

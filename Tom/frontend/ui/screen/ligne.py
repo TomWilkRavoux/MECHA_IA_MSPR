@@ -30,9 +30,7 @@ def render(res: pd.DataFrame) -> None:
     agg = agg.sort_values("critical", ascending=False).reset_index(drop=True)
 
     # Bar chart empilé : répartition des alertes par ligne
-    long = agg.melt(
-        id_vars="Ligne", value_vars=ALERT_ORDER, var_name="alert_level", value_name="n"
-    )
+    long = agg.melt(id_vars="Ligne", value_vars=ALERT_ORDER, var_name="alert_level", value_name="n")
     chart = (
         alt.Chart(long)
         .mark_bar()

@@ -41,8 +41,8 @@ def test_doc_exists():
 
 def test_dictionary_matches_schema():
     documented = _documented_columns()
-    missing = EXPECTED - documented       # colonnes du schéma non documentées
-    extra = documented - EXPECTED         # colonnes documentées inexistantes
+    missing = EXPECTED - documented  # colonnes du schéma non documentées
+    extra = documented - EXPECTED  # colonnes documentées inexistantes
     assert not missing, f"Colonnes non documentées : {sorted(missing)}"
     assert not extra, f"Colonnes documentées mais absentes du schéma : {sorted(extra)}"
 
