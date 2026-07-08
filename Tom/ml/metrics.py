@@ -35,8 +35,8 @@ from ml.prep import FIG_DIR
 def nasa_score(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     """Score asymétrique NASA C-MAPSS (plus bas = mieux).
 
-    Retard de prédiction (d<0, RUL surestimé) pénalisé plus fortement (exp(-d/13))
-    que l'avance (d>0, RUL sous-estimé, exp(d/10)).
+    Avec d = y_pred - y_true : RUL surestimé (d>0, panne détectée trop tard) pénalisé
+    plus fortement (exp(d/10)) que RUL sous-estimé (d<0, prédiction conservatrice, exp(-d/13)).
     """
     d = np.asarray(y_pred, dtype=float) - np.asarray(y_true, dtype=float)
     return float(np.sum(np.where(d < 0, np.exp(-d / 13.0) - 1.0, np.exp(d / 10.0) - 1.0)))
