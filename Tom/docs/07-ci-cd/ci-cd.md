@@ -11,8 +11,8 @@ placent en `working_directory: ~/project/Tom`.
 
 La chaîne couvre quatre familles de risques du cours : **gouvernance de branche**,
 **sécurité** (secrets + dépendances), **tests** (unitaires → intégration → E2E), et
-**qualité** (lint + gate de métriques modèle). Une **livraison** (build des images sur
-tag) complète l'intégration.
+**qualité** (lint Ruff + analyse SonarCloud + gate de métriques modèle). Une **livraison**
+(build des images sur tag) complète l'intégration.
 
 ## 1. Vue d'ensemble — deux workflows
 
@@ -24,8 +24,8 @@ tag) complète l'intégration.
    lint               │   jobs en parallèle
    deps-audit         │
    validate-model     │
-   test-ia ───────────┼──▶ build-images ──▶ e2e
-                            (build Docker)   (API conteneurisée en HTTP)
+   test-ia ───────────┼──▶ build-images ──▶ e2e ──▶ sonarcloud
+                            (build Docker)   (HTTP)   (qualité + couverture)
 
  WORKFLOW « cd »  (uniquement au push d'un tag vX.Y.Z)
  ─────────────────────────────────────────────────────────────────────
@@ -37,7 +37,9 @@ L'**orchestration** repose sur les dépendances `requires:` :
   test cassé remonte tout de suite) ;
 - `build-images` n'est lancé **que si `test-ia` passe** (inutile de construire une image
   sur un code dont les tests échouent) ;
-- `e2e` n'est lancé **que si `build-images` réussit** (il a besoin de l'image).
+- `e2e` n'est lancé **que si `build-images` réussit** (il a besoin de l'image) ;
+- `sonarcloud` clôt la chaîne : il **attend `test-ia`** (dont il consomme la couverture)
+  **et `e2e`**, pour n'analyser qu'un code déjà validé.
 
 ## 2. Détail des jobs
 
@@ -51,6 +53,7 @@ L'**orchestration** repose sur les dépendances `requires:` :
 | `deps-audit` | `cimg/python:3.12` | **pip-audit** : vulnérabilités connues (CVE) des dépendances, en complément de gitleaks. | ⚠️ non bloquant (voir §5) |
 | `build-images` | `machine` (Docker) | `docker compose build` : valide que les images backend & frontend se construisent (conteneurisation, CDC §8.1). | ✅ |
 | `e2e` | `machine` (Docker) | Démarre l'API **dans son conteneur** (modèles LSTM embarqués) et vérifie une prédiction **de bout en bout par HTTP** (`tests/test_e2e.py`). | ✅ |
+| `sonarcloud` | `cimg/python:3.12` | **SonarCloud** : analyse statique (bugs, code smells, duplication, maintenabilité) + **couverture** (`coverage.xml` de `test-ia`). En fin de chaîne. | ⚠️ garde sur `SONAR_TOKEN` (voir §5.1) |
 
 ### 2.1 La pyramide de tests
 
@@ -127,6 +130,10 @@ docker compose up -d --build backend
 #   … attendre le healthcheck (curl http://localhost:8000/health) …
 MECHA_E2E_URL=http://localhost:8000 uvx --with requests --with pytest pytest tests/test_e2e.py
 docker compose down
+
+# sonarcloud (nécessite SONAR_TOKEN + projet SonarCloud, cf. §5.1)
+uv run pytest --cov=ml --cov=backend --cov-report=xml   # produit coverage.xml
+SONAR_TOKEN=xxxxx sonar-scanner   # sonar-scanner CLI, lit sonar-project.properties
 ```
 
 ### Déclencher une « release » (workflow `cd`)
@@ -149,13 +156,27 @@ git push origin v1.0.0     # → CircleCI lance le workflow cd (build des images
   Le formatage reste disponible en local (`uvx ruff format`) et pourra devenir un gate
   une fois les branches convergées.
 
+### 5.1 Configuration SonarCloud
+
+Le job `sonarcloud` s'appuie sur [`sonar-project.properties`](../../sonar-project.properties)
+(clé projet, organisation, sources, chemin de couverture). Pour l'activer :
+
+1. Créer le projet sur [sonarcloud.io](https://sonarcloud.io) (import du dépôt GitHub) et
+   vérifier `sonar.projectKey` / `sonar.organization` dans le fichier de properties.
+2. Générer un **token** (My Account > Security) et l'ajouter comme variable
+   **`SONAR_TOKEN`** dans CircleCI (Project Settings > Environment Variables).
+
+Tant que `SONAR_TOKEN` n'est **pas** défini, le job **s'ignore proprement** (message +
+sortie 0) : la CI ne casse pas avant que SonarCloud soit branché. La couverture affichée
+provient du `coverage.xml` généré par `test-ia` (chemins relatifs via
+`[tool.coverage.run] relative_files = true`) et transmis au job via un **workspace** CircleCI.
+
 ## 6. Ce qui reste « cible » (perspectives)
 
 | Brique cible | Rôle | État |
 |---|---|---|
 | **Push registry** (Docker Hub / GHCR) | publier l'image taggée | la CD est **build-only** ; le push nécessite des credentials à configurer dans CircleCI |
 | **Déploiement automatique VPS** | dérouler [`deploy.sh`](../../deploy.sh) via SSH sur tag | manuel aujourd'hui (cf. [`deploiement_vps.md`](../06-deploiement/deploiement_vps.md)) |
-| **SonarQube** (qualité : code mort, maintenabilité) | analyse statique approfondie | perspective ; Ruff couvre déjà lint + imports + bugbear |
 | **Test de charge** (Locust sur `/predict/batch`) | tenue en charge | hors périmètre actuel |
 
 > Le message : l'**intégration continue** (gouvernance, sécurité, tests unitaires →

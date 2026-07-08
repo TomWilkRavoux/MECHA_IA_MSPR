@@ -108,7 +108,12 @@ jobs:
             - ~/.cache/uv
       - run:
           name: Lancer les tests (avec couverture)
-          command: uv run --frozen pytest -q --cov=ml --cov=backend
+          command: uv run --frozen pytest -q --cov=ml --cov=backend --cov-report=xml
+      # Le rapport de couverture est transmis au job `sonarcloud` via le workspace.
+      - persist_to_workspace:
+          root: ~/project
+          paths:
+            - Tom/coverage.xml
 
   # Gate qualité modèle (MLOps) : refuse un modèle dont les performances régressent
   # sous le contrat (ml/metrics_thresholds.json). Lit le rapport committé
@@ -182,6 +187,33 @@ jobs:
             MECHA_E2E_URL=http://localhost:8000 \
               uvx --with requests --with pytest pytest tests/test_e2e.py -v
 
+  # Analyse qualité SonarCloud (bugs, code smells, duplication, maintenabilité) +
+  # couverture (coverage.xml produit par test-ia, récupéré via le workspace).
+  # Config : Tom/sonar-project.properties. Requiert la variable SONAR_TOKEN (SonarCloud).
+  # Garde : si le token n'est pas encore configuré, le job s'ignore sans casser la CI.
+  sonarcloud:
+    docker:
+      - image: cimg/python:3.12
+    working_directory: ~/project/Tom
+    steps:
+      - checkout:
+          path: ~/project
+      - attach_workspace:
+          at: ~/project
+      - run:
+          name: Analyse SonarCloud
+          command: |
+            if [ -z "$SONAR_TOKEN" ]; then
+              echo "SONAR_TOKEN non défini : configure le projet SonarCloud et ajoute le"
+              echo "token dans les variables CircleCI. Job ignoré (non bloquant)."
+              exit 0
+            fi
+            SCANNER=sonar-scanner-cli-7.0.2.4839-linux-x64
+            curl -sSLo /tmp/scanner.zip \
+              "https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/${SCANNER}.zip"
+            unzip -q /tmp/scanner.zip -d /tmp
+            "/tmp/${SCANNER}/bin/sonar-scanner"
+
 workflows:
   ci:
     jobs:
@@ -197,6 +229,12 @@ workflows:
       - e2e:
           requires:
             - build-images
+      # Analyse qualité en fin de chaîne : a besoin de la couverture (test-ia) et
+      # attend la validation E2E pour ne s'exécuter qu'une fois le reste au vert.
+      - sonarcloud:
+          requires:
+            - test-ia
+            - e2e
 
   # Livraison continue : au push d'un tag vX.Y.Z, on (re)build les images de release.
   # Build-only (pas de push registry) → aucun credential requis. Le push vers un

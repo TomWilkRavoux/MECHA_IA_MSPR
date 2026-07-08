@@ -64,6 +64,9 @@ ignore = ["E501"]
 
 [tool.coverage.run]
 source = ["ml", "backend"]
+# Chemins relatifs dans coverage.xml : le rapport reste mappable par SonarCloud
+# quel que soit le chemin absolu du runner (job test-ia -> workspace -> job sonarcloud).
+relative_files = true
 
 [dependency-groups]
 dev = [
