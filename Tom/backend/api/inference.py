@@ -125,7 +125,7 @@ class ModelService:
                 "threshold": RISK_THRESHOLD,
                 "n_cycles_used": n,
             }
-            for p, r, n in zip(probas, ruls, n_used)
+            for p, r, n in zip(probas, ruls, n_used, strict=True)
         ]
 
     def predict_trajectory(self, cycles: list[dict[str, float]]) -> list[dict]:
@@ -142,7 +142,7 @@ class ModelService:
         probas, ruls = self._infer(windows)
         return [
             {"cycle_index": i, **self._format(bool(p >= 0.5), float(p), float(r))}
-            for i, (p, r) in enumerate(zip(probas, ruls))
+            for i, (p, r) in enumerate(zip(probas, ruls, strict=True))
         ]
 
 

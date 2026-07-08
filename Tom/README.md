@@ -11,15 +11,18 @@ Documentation métier détaillée (données + modèles) : [`docs/README.md`](doc
 
 - **Python ≥ 3.12**
 - **[uv](https://docs.astral.sh/uv/)** (gestionnaire d'environnement/paquets)
-- **GPU NVIDIA optionnel** : le LSTM tourne sur CUDA si dispo (index PyTorch `cu128`
-  déclaré dans `pyproject.toml`), sinon fallback CPU.
+- **GPU NVIDIA optionnel** : `torch` est décliné en deux extras mutuellement exclusifs,
+  `cu128` (CUDA, développement sur GPU) et `cpu` (CI / serving). Choisir l'un des deux
+  au `uv sync`.
 
 ```bash
 # Installer uv si nécessaire
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Depuis Tom/ : créer le venv et installer les dépendances
-uv sync
+uv sync --extra cu128   # poste de dev avec GPU NVIDIA
+# ou
+uv sync --extra cpu     # sans GPU (CI, serving) : torch CPU, pas de pile CUDA
 ```
 
 ---

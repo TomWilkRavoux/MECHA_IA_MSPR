@@ -98,7 +98,7 @@ def predict_batch(req: BatchPredictRequest) -> BatchPredictResponse:
     return BatchPredictResponse(
         results=[
             PredictResponse(machine_id=m.machine_id, **out)
-            for m, out in zip(req.machines, outs)
+            for m, out in zip(req.machines, outs, strict=True)
         ]
     )
 

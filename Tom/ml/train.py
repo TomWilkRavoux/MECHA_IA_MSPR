@@ -21,7 +21,7 @@ from __future__ import annotations
 import argparse
 import json
 import platform
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import joblib
 import numpy as np
@@ -132,7 +132,7 @@ def fit(device: str, *, epochs: int, seed: int, out_dir) -> tuple[LSTMNet, LSTMN
 def evaluate(clf: LSTMNet, reg: LSTMNet, scaler, device: str) -> dict:
     """Évalue les deux têtes sur la dernière fenêtre de chaque machine test."""
     ev = prep.test_last_cycle_eval()
-    rul_by_id = dict(zip(ev["machine_id"].to_list(), ev["RUL_true"].to_list()))
+    rul_by_id = dict(zip(ev["machine_id"].to_list(), ev["RUL_true"].to_list(), strict=True))
     xw, ids = prep.make_test_windows(prep.load_test(), scaler=scaler)
     y_rul = np.array([rul_by_id[i] for i in ids], dtype=float)
     y_atrisk = (y_rul <= prep.RISK_THRESHOLD).astype(int)
@@ -155,7 +155,7 @@ def evaluate(clf: LSTMNet, reg: LSTMNet, scaler, device: str) -> dict:
 def write_metrics(result: dict, out_dir, *, mode: str, device: str, seed: int, epochs: int) -> None:
     """Journalise les métriques + métadonnées de run dans `out_dir/metrics.json`."""
     payload = {
-        "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "generated_at": datetime.now(UTC).isoformat(timespec="seconds"),
         "mode": mode,
         "device": device,
         "python": platform.python_version(),

@@ -17,15 +17,57 @@ dependencies = [
     "xgboost>=3.3.0",
 ]
 
+# torch se décline en deux variantes mutuellement exclusives : GPU (cu128) pour le
+# développement, CPU pour la CI / le serving. On les expose en extras et on résout
+# chacune depuis l'index PyTorch dédié (cf. [tool.uv.sources] + conflicts ci-dessous).
+#   dev  : uv sync --extra cu128
+#   CI   : uv sync --extra cpu
+[project.optional-dependencies]
+cpu = ["torch>=2.11.0"]
+cu128 = ["torch>=2.11.0"]
+
+[tool.uv]
+conflicts = [[{ extra = "cpu" }, { extra = "cu128" }]]
+
 [[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
 url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cpu", extra = "cpu" },
+    { index = "pytorch-cu128", extra = "cu128" },
+]
 
 [tool.pytest.ini_options]
 pythonpath = [".", "frontend"]
 testpaths = ["tests"]
 
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+# Notebooks d'exploration marimo : ce n'est pas du code applicatif maintenu
+# (cellules = expressions nues, volontairement « inutiles » au sens du linter).
+extend-exclude = ["__marimo__", ".venv", "preAnalyse", "notebooks"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+# E501 (longueur de ligne) est laissé au formateur ; on ne casse pas la CI sur un
+# commentaire ou une URL un peu longue.
+ignore = ["E501"]
+
+[tool.coverage.run]
+source = ["ml", "backend"]
+
 [dependency-groups]
 dev = [
     "httpx>=0.28.1",
     "pytest>=9.1.1",
+    "pytest-cov>=7.0.0",
 ]

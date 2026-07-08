@@ -10,7 +10,7 @@ import altair as alt
 import pandas as pd
 import requests
 import streamlit as st
-from api_client import ApiClient, build_single_request, META_COLS
+from api_client import META_COLS, ApiClient, build_single_request
 
 from ..style.css import status_pill
 

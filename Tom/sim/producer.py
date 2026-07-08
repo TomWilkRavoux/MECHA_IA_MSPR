@@ -23,7 +23,7 @@ import argparse
 import csv
 import os
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pandas as pd
@@ -157,7 +157,7 @@ def run(argv: list[str] | None = None) -> int:
                 order = {"ok": 0, "warning": 1, "critical": 2}
                 if order[lvl] > order[prev]:
                     writer.writerow({
-                        "timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                        "timestamp": datetime.now(UTC).isoformat(timespec="seconds"),
                         "tick": tick, "machine_id": mid,
                         "usine": meta[mid].get("usine", ""),
                         "ligne_production": meta[mid].get("ligne_production", ""),

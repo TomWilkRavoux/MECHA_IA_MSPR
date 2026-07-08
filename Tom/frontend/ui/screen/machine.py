@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import pandas as pd
 import streamlit as st
-
 from api_client import ApiClient
 
 from ..utils.components import machine_cycles, render_prediction_metrics, render_trajectory_tabs

@@ -27,7 +27,7 @@ from __future__ import annotations
 import argparse
 import json
 import shutil
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent  # dossier Tom/
@@ -44,7 +44,7 @@ ARTIFACTS = ("lstm_classifier.pt", "lstm_regressor.pt", "scaler.joblib", "metric
 # ----------------------------------------------------------------------------
 def new_run_id() -> str:
     """Identifiant de run trié chronologiquement (UTC, sûr pour un nom de dossier)."""
-    return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    return datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
 
 
 def run_dir(run_id: str) -> Path:
@@ -83,7 +83,7 @@ def register_run(run_id: str, *, metrics: dict, promote: bool = True) -> dict:
     """Enregistre un run entraîné dans le pointeur et le promeut (par défaut)."""
     entry = {
         "run_id": run_id,
-        "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "created_at": datetime.now(UTC).isoformat(timespec="seconds"),
         "path": f"runs/{run_id}",
         "metrics": {
             "classification": metrics.get("classification", {}),

@@ -9,11 +9,10 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+from api_client import build_requests, build_single_request
 
 from backend.api.inference import CRITICAL_PROBA, CRITICAL_RUL, ModelService, _alert_level
 from ml.prep import SEQ_LEN
-
-from api_client import build_requests, build_single_request
 
 
 # ---------------------------------------------------------------------------

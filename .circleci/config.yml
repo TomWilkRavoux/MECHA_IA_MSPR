@@ -3,6 +3,16 @@ version: 2.1
 orbs:
   node: circleci/node@5.2.0
 
+# Installe uv (gestionnaire de paquets/venv) et l'expose au PATH des steps suivants.
+commands:
+  install-uv:
+    steps:
+      - run:
+          name: Installer uv
+          command: |
+            curl -LsSf https://astral.sh/uv/install.sh | sh
+            echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$BASH_ENV"
+
 jobs:
   block-merge-rules:
     docker:
@@ -60,9 +70,24 @@ jobs:
               | tar -xz gitleaks
             ./gitleaks detect --source . --no-banner --redact --verbose
 
+  # Lint + import-sorting (Ruff). Autonome : pas besoin d'installer les dépendances
+  # du projet, `uvx` récupère Ruff à la volée. Config dans Tom/pyproject.toml.
+  lint:
+    docker:
+      - image: cimg/python:3.12
+    working_directory: ~/project/Tom
+    steps:
+      - checkout:
+          path: ~/project
+      - install-uv
+      - run:
+          name: Ruff (lint)
+          command: uvx ruff check .
+
   # Tests de la partie IA (Tom/) : contrat d'API, unitaires, dictionnaire de données.
-  # torch est installé en CPU ; sans les modèles (non versionnés), les tests d'inférence
-  # marqués @needs_models se skippent automatiquement.
+  # Dépendances reproduites depuis le lockfile (uv.lock) — variante torch CPU via
+  # l'extra `cpu`. Les modèles d'inférence sont committés (models/*.pt, scaler.joblib),
+  # donc les tests marqués @needs_models s'exécutent réellement ici.
   test-ia:
     docker:
       - image: cimg/python:3.12
@@ -70,23 +95,24 @@ jobs:
     steps:
       - checkout:
           path: ~/project
+      - install-uv
+      - restore_cache:
+          keys:
+            - uv-cpu-v1-{{ checksum "uv.lock" }}
       - run:
-          name: Installer les dépendances (torch CPU)
-          command: |
-            python -m pip install --upgrade pip
-            pip install torch --index-url https://download.pytorch.org/whl/cpu
-            pip install "fastapi>=0.139.0" "uvicorn[standard]>=0.50.0" \
-              "scikit-learn>=1.9.0" "polars>=1.42.1" numpy joblib \
-              "streamlit>=1.58.0" altair pandas requests \
-              pytest httpx
+          name: Installer les dépendances (torch CPU, depuis le lockfile)
+          command: uv sync --frozen --extra cpu
+      - save_cache:
+          key: uv-cpu-v1-{{ checksum "uv.lock" }}
+          paths:
+            - ~/.cache/uv
       - run:
-          name: Lancer les tests
-          command: python -m pytest -q
+          name: Lancer les tests (avec couverture)
+          command: uv run --frozen pytest -q --cov=ml --cov=backend
 
   # Gate qualité modèle (MLOps) : refuse un modèle dont les performances régressent
   # sous le contrat (ml/metrics_thresholds.json). Lit le rapport committé
-  # models/metrics.json (produit en local par `python -m ml.train`). Aucune dépendance
-  # (stdlib), aucune donnée requise : rapide et déterministe.
+  # models/metrics.json. Aucune dépendance (stdlib), aucune donnée : rapide et déterministe.
   validate-model:
     docker:
       - image: cimg/python:3.12
@@ -97,6 +123,25 @@ jobs:
       - run:
           name: Gate de validation des métriques
           command: python -m ml.validate_metrics
+
+  # Scan des vulnérabilités connues des dépendances (pip-audit), en complément de
+  # gitleaks (secrets). On audite l'environnement installé (torch, absent de PyPI,
+  # est ignoré proprement). NON BLOQUANT au départ : une CVE transitive non
+  # corrigeable ne doit pas casser la CI — à durcir une fois le socle assaini.
+  deps-audit:
+    docker:
+      - image: cimg/python:3.12
+    working_directory: ~/project/Tom
+    steps:
+      - checkout:
+          path: ~/project
+      - install-uv
+      - run:
+          name: Installer l'environnement (sans torch, non audité)
+          command: uv sync --frozen --extra cpu --no-install-package torch
+      - run:
+          name: pip-audit (non bloquant)
+          command: uv run --with pip-audit pip-audit || echo "Vulnérabilités détectées (non bloquant pour l'instant)."
 
   # Valide que les images se construisent (conteneurisation, CDC §8.1).
   build-images:
@@ -110,13 +155,57 @@ jobs:
           name: Build des images backend & frontend
           command: docker compose build
 
+  # Test end-to-end : démarre l'API dans son conteneur (modèles embarqués) et vérifie
+  # une prédiction bout-en-bout par HTTP. tests/test_e2e.py ne dépend que de `requests`.
+  e2e:
+    machine:
+      image: ubuntu-2404:current
+    working_directory: ~/project/Tom
+    steps:
+      - checkout:
+          path: ~/project
+      - install-uv
+      - run:
+          name: Démarrer l'API conteneurisée
+          command: docker compose up -d --build backend
+      - run:
+          name: Attendre le healthcheck de l'API
+          command: |
+            for i in $(seq 1 30); do
+              if curl -sf http://localhost:8000/health >/dev/null; then echo "API up"; exit 0; fi
+              sleep 2
+            done
+            echo "API indisponible :"; docker compose logs backend; exit 1
+      - run:
+          name: Lancer les tests E2E
+          command: |
+            MECHA_E2E_URL=http://localhost:8000 \
+              uvx --with requests --with pytest pytest tests/test_e2e.py -v
+
 workflows:
   ci:
     jobs:
       - block-merge-rules
       - scan-secrets
+      - lint
+      - deps-audit
       - test-ia
       - validate-model
       - build-images:
           requires:
             - test-ia
+      - e2e:
+          requires:
+            - build-images
+
+  # Livraison continue : au push d'un tag vX.Y.Z, on (re)build les images de release.
+  # Build-only (pas de push registry) → aucun credential requis. Le push vers un
+  # registre / déploiement VPS (deploy.sh) reste une évolution documentée.
+  cd:
+    jobs:
+      - build-images:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v\d+\.\d+\.\d+$/
