@@ -1,6 +1,5 @@
 .env
 .env.prod
-Tom/.env.prod
 .venv/
 __marimo__/
 __pycache__/
@@ -20,11 +19,11 @@ output/
 
 # ...sauf les 3 artefacts LSTM légers (~300 Ko) : nécessaires aux tests d'inférence
 # en CI et à l'exécution du backend conteneurisé (scaler + 2 têtes du modèle retenu).
-!Tom/models/scaler.joblib
-!Tom/models/lstm_classifier.pt
-!Tom/models/lstm_regressor.pt
+!models/scaler.joblib
+!models/lstm_classifier.pt
+!models/lstm_regressor.pt
 
 # Registre MLOps local : runs versionnés + pointeur. La baseline plate ci-dessus
 # reste le contrat committé ; promouvoir en prod = copier un run dessus (--to-baseline).
-Tom/models/runs/
-Tom/models/registry.json
+models/runs/
+models/registry.json

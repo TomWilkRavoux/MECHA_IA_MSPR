@@ -1,6 +1,5 @@
 [allowlist]
 description = "Global allowlist"
 paths = [
-  '''Tom/uv\.lock$''',
   '''.*uv\.lock$'''
 ]
