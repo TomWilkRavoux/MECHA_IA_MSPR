@@ -20,8 +20,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import platform
 from datetime import UTC, datetime
+from pathlib import Path
 
 import joblib
 import numpy as np
@@ -179,6 +181,13 @@ def write_metrics(result: dict, out_dir, *, mode: str, device: str, seed: int, e
         "risk_threshold": prep.RISK_THRESHOLD,
         **result,
     }
+    # Canonicalise et contraint la destination à models/ avant toute écriture :
+    # un out_dir dérivé d'une donnée externe ne peut pas s'échapper du dépôt (CWE-22).
+    base = os.path.realpath(prep.ROOT / "models")
+    out_real = os.path.realpath(out_dir)
+    if out_real != base and not out_real.startswith(base + os.sep):
+        raise SystemExit(f"Dossier de sortie hors de models/ refusé : {out_dir}")
+    out_dir = Path(out_real)
     out_dir.mkdir(parents=True, exist_ok=True)
     path = out_dir / "metrics.json"
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n")

@@ -8,7 +8,17 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from ml import validate_metrics as vm
+
+
+@pytest.fixture(autouse=True)
+def _sandbox_root(tmp_path, monkeypatch):
+    """Les chemins CLI sont contraints à ROOT (anti-traversal) : on fait de
+    tmp_path la racine de confiance pour pouvoir y écrire les fixtures."""
+    monkeypatch.setattr(vm, "ROOT", tmp_path)
+
 
 _THRESHOLDS = {
     "_comment": "ignoré",
@@ -54,3 +64,10 @@ def test_main_returns_1_on_regression(tmp_path, capsys):
 def test_main_reports_missing_metric_as_failure(tmp_path):
     m, t = _write(tmp_path, {"classification": {}, "regression": {"RMSE": 25.0}})
     assert vm.main(["--metrics", str(m), "--thresholds", str(t)]) == 1
+
+
+def test_main_rejects_path_outside_root(tmp_path):
+    """Anti-traversal : un chemin qui s'échappe de ROOT est refusé avant lecture."""
+    _, t = _write(tmp_path, {"classification": {"f1": 0.9}, "regression": {"RMSE": 25.0}})
+    with pytest.raises(SystemExit, match="hors du projet"):
+        vm.main(["--metrics", str(tmp_path / ".." / "evil.json"), "--thresholds", str(t)])

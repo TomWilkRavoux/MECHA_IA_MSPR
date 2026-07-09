@@ -59,6 +59,20 @@ def _validate_api_url(url: str) -> str:
     return url.rstrip("/")
 
 
+def _resolve_under_root(path: Path) -> Path:
+    """Canonicalise un chemin CLI et le contraint au dépôt (anti-traversal, CWE-22).
+
+    `--csv` / `--out` viennent de la ligne de commande : le chemin est résolu
+    (`os.path.realpath`) puis doit rester sous `ROOT` — un chemin fabriqué
+    (`../../…`) est rejeté avant tout accès disque.
+    """
+    base = os.path.realpath(ROOT)
+    resolved = os.path.realpath(path)
+    if not resolved.startswith(base + os.sep):
+        raise SystemExit(f"Chemin hors du projet refusé : {path}")
+    return Path(resolved)
+
+
 # ----------------------------------------------------------------------------
 # Préparation du jeu rejoué (fonctions pures, testables sans réseau)
 # ----------------------------------------------------------------------------
@@ -168,11 +182,13 @@ def run(argv: list[str] | None = None) -> int:
     p.add_argument("--out", type=Path, default=DEFAULT_OUT)
     args = p.parse_args(argv)
     api_url = _validate_api_url(args.api_url)
+    csv_path = _resolve_under_root(args.csv)
+    out_path = _resolve_under_root(args.out)
 
-    if not args.csv.exists():
+    if not csv_path.exists():
         raise SystemExit(f"CSV introuvable : {args.csv}")
 
-    df = pd.read_csv(args.csv)
+    df = pd.read_csv(csv_path)
     ids = select_machines(df, args.machines, args.usine)
     if not ids:
         raise SystemExit("Aucune machine sélectionnée (vérifier --usine).")
@@ -183,15 +199,15 @@ def run(argv: list[str] | None = None) -> int:
         horizon = min(horizon, args.max_ticks)
 
     _wait_backend(api_url)
-    args.out.parent.mkdir(parents=True, exist_ok=True)
-    new_file = not args.out.exists()
-    fh = args.out.open("a", newline="")
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    new_file = not out_path.exists()
+    fh = out_path.open("a", newline="")
     writer = csv.DictWriter(fh, fieldnames=ALERT_COLS)
     if new_file:
         writer.writeheader()
 
     print(f"\nSimulation : {len(ids)} machines · {horizon} cycles · {args.interval}s/cycle")
-    print(f"Alertes journalisées → {args.out.relative_to(ROOT)}\n")
+    print(f"Alertes journalisées → {out_path.relative_to(ROOT)}\n")
 
     last_level: dict[str, str] = {}
     n_alerts = 0
@@ -225,7 +241,7 @@ def run(argv: list[str] | None = None) -> int:
         fh.close()
 
     print(
-        f"\nTerminé — {n_alerts} montée(s) d'alerte journalisée(s) dans {args.out.relative_to(ROOT)}"
+        f"\nTerminé — {n_alerts} montée(s) d'alerte journalisée(s) dans {out_path.relative_to(ROOT)}"
     )
     return 0
 

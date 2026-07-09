@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
 from datetime import UTC, datetime
 from pathlib import Path
@@ -50,13 +51,15 @@ def new_run_id() -> str:
 def run_dir(run_id: str) -> Path:
     """Dossier des artefacts d'un run, validé anti-traversal (reste sous `runs/`).
 
-    `run_id` peut venir de la CLI : on résout le chemin et on refuse tout ce qui
-    s'échapperait de `RUNS_DIR` (ex. `../…`), évitant une écriture/lecture hors zone (CWE-22).
+    `run_id` peut venir de la CLI : le chemin construit est canonicalisé
+    (`os.path.realpath`) puis contraint à `RUNS_DIR` — un identifiant fabriqué
+    (`../…`, chemin absolu) est rejeté avant tout accès disque (CWE-22).
     """
-    candidate = (RUNS_DIR / run_id).resolve()
-    if not candidate.is_relative_to(RUNS_DIR.resolve()):
+    base = os.path.realpath(RUNS_DIR)
+    candidate = os.path.realpath(os.path.join(base, run_id))
+    if not candidate.startswith(base + os.sep):
         raise ValueError(f"run_id invalide (hors de runs/) : {run_id!r}")
-    return candidate
+    return Path(candidate)
 
 
 # ----------------------------------------------------------------------------

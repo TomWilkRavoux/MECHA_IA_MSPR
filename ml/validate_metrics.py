@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 
 from ml import registry  # stdlib seule : ne casse pas l'exécution CI sans torch/données
@@ -64,18 +65,35 @@ def _fmt(v) -> str:
     return "manquant" if v is None else f"{v:.3f}"
 
 
+def _resolve_under_root(path: Path) -> Path:
+    """Canonicalise un chemin CLI et le contraint au dépôt (anti-traversal, CWE-22).
+
+    `--metrics` / `--thresholds` viennent de la ligne de commande : le chemin est
+    résolu (`os.path.realpath`) puis doit rester sous `ROOT` — un chemin fabriqué
+    (`../../…`) est rejeté avant tout accès disque. Les tests substituent `ROOT`
+    par leur répertoire temporaire.
+    """
+    base = os.path.realpath(ROOT)
+    resolved = os.path.realpath(path)
+    if not resolved.startswith(base + os.sep):
+        raise SystemExit(f"Chemin hors du projet refusé : {path}")
+    return Path(resolved)
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="Gate de validation des métriques modèle.")
     p.add_argument("--metrics", type=Path, default=DEFAULT_METRICS)
     p.add_argument("--thresholds", type=Path, default=DEFAULT_THRESHOLDS)
     args = p.parse_args(argv)
+    metrics_path = _resolve_under_root(args.metrics)
+    thresholds_path = _resolve_under_root(args.thresholds)
 
-    if not args.metrics.exists():
+    if not metrics_path.exists():
         print(f"ERREUR : {args.metrics} introuvable. Lancer d'abord `python -m ml.train`.")
         return 2
 
-    metrics = json.loads(args.metrics.read_text())
-    thresholds = json.loads(args.thresholds.read_text())
+    metrics = json.loads(metrics_path.read_text())
+    thresholds = json.loads(thresholds_path.read_text())
     rows = check(metrics, thresholds)
 
     gen = metrics.get("generated_at", "?")
