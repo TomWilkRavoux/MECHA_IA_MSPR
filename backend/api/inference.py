@@ -22,6 +22,8 @@ torch.set_num_threads(int(os.getenv("TORCH_NUM_THREADS", "3")))
 CRITICAL_RUL = RISK_THRESHOLD // 2  # dégradation avancée -> intervention prioritaire
 CRITICAL_PROBA = 0.75
 
+_MODELS_NOT_LOADED = "Modèles non chargés."
+
 
 def _alert_level(at_risk: bool, rul: float, proba: float) -> str:
     if not at_risk:
@@ -87,7 +89,7 @@ class ModelService:
 
     def predict(self, cycles: list[dict[str, float]]) -> dict:
         if not self.ready:
-            raise RuntimeError("Modèles non chargés.")
+            raise RuntimeError(_MODELS_NOT_LOADED)
         arr = self._normalize(cycles)
         window, n_used = self._window_ending_at(arr, len(arr))
         proba, rul = self._infer(window[None, ...])
@@ -109,7 +111,7 @@ class ModelService:
         N appels `predict`, ordre d'entrée préservé.
         """
         if not self.ready:
-            raise RuntimeError("Modèles non chargés.")
+            raise RuntimeError(_MODELS_NOT_LOADED)
         windows, n_used = [], []
         for cycles in machines_cycles:
             arr = self._normalize(cycles)
@@ -136,7 +138,7 @@ class ModelService:
         Renvoie un point par cycle (aligné sur l'ordre d'entrée via `cycle_index`).
         """
         if not self.ready:
-            raise RuntimeError("Modèles non chargés.")
+            raise RuntimeError(_MODELS_NOT_LOADED)
         arr = self._normalize(cycles)
         windows = np.stack([self._window_ending_at(arr, end)[0] for end in range(1, len(arr) + 1)])
         probas, ruls = self._infer(windows)

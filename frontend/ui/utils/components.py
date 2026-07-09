@@ -14,6 +14,8 @@ from api_client import META_COLS, ApiClient, build_single_request
 
 from ..style.css import status_pill
 
+_CYCLE_Q = "cycle:Q"
+
 
 def machine_cycles(df: pd.DataFrame, machine) -> pd.DataFrame:
     """Cycles d'une machine, ordonnés par `cycle` si la colonne existe."""
@@ -42,10 +44,10 @@ def _trajectory_chart(traj: pd.DataFrame, value: str, y_title: str, rules: list[
         alt.Chart(traj)
         .mark_line(point=alt.OverlayMarkDef(size=18))
         .encode(
-            x=alt.X("cycle:Q", title="Cycle"),
+            x=alt.X(_CYCLE_Q, title="Cycle"),
             y=alt.Y(f"{value}:Q", title=y_title, scale=alt.Scale(zero=False)),
             tooltip=[
-                alt.Tooltip("cycle:Q", title="Cycle"),
+                alt.Tooltip(_CYCLE_Q, title="Cycle"),
                 alt.Tooltip(f"{value}:Q", title=y_title, format=".2f"),
             ],
         )
@@ -76,7 +78,7 @@ def _sensors_facet_chart(
         alt.Chart(long)
         .mark_line()
         .encode(
-            x=alt.X("cycle:Q", title="Cycle"),
+            x=alt.X(_CYCLE_Q, title="Cycle"),
             y=alt.Y("Valeur:Q", title=None, scale=alt.Scale(zero=False)),
             facet=alt.Facet("Capteur:N", columns=columns, title=None),
         )
@@ -91,7 +93,7 @@ def _trajectoire_api(_client: ApiClient, base_url: str, machine, g: pd.DataFrame
 
 
 def render_trajectory_tabs(
-    client: ApiClient, machine, g: pd.DataFrame, thr: dict, key_prefix: str = "traj"
+    client: ApiClient, machine, g: pd.DataFrame, thr: dict
 ) -> None:
     """Sous-onglets Régression / Classification / Capteurs pour une machine donnée."""
     # Trajectoire cycle par cycle via l'API (fenêtre glissante côté serveur)

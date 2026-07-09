@@ -58,7 +58,9 @@ def train_head(xtr, ytr, xva, yva, loss_fn, device, *, epochs=30, patience=5, ba
     model = LSTMNet().to(device)
     to_t = lambda a: torch.as_tensor(a, dtype=torch.float32, device=device)  # noqa: E731
     xtr, ytr, xva, yva = to_t(xtr), to_t(ytr), to_t(xva), to_t(yva)
-    opt = torch.optim.Adam(model.parameters(), lr=1e-3)
+    # weight_decay explicite (régularisation L2) : 0.0 conserve la baseline entraînée
+    # committée telle quelle, tout en fixant l'hyperparamètre au lieu de l'implicite.
+    opt = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=0.0)
     best, best_state, wait = float("inf"), None, 0
     for ep in range(epochs):
         tr = _run_epoch(model, xtr, ytr, loss_fn, opt, batch)

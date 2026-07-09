@@ -37,4 +37,4 @@ def render(client: ApiClient, df: pd.DataFrame, thr: dict) -> None:
 
     render_prediction_metrics(stats, extra=True)
     st.divider()
-    render_trajectory_tabs(client, machine, g, thr, key_prefix="unitaire")
+    render_trajectory_tabs(client, machine, g, thr)

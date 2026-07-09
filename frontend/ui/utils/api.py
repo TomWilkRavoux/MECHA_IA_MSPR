@@ -31,7 +31,7 @@ def run_predictions(client: ApiClient, df: pd.DataFrame, n_max: int) -> pd.DataF
     meta_cols = [c for c in ["usine", "ligne_production"] if c in df.columns]
     if meta_cols:
         meta = df.groupby("machine_id", sort=False)[meta_cols].first().reset_index()
-        res = res.merge(meta, on="machine_id", how="left")
+        res = res.merge(meta, on="machine_id", how="left", validate="many_to_one")
 
     res["badge"] = res["alert_level"].map(STATUS_LABEL)
     return res.sort_values("rul_predicted").reset_index(drop=True)

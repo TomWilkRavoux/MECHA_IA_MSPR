@@ -48,8 +48,15 @@ def new_run_id() -> str:
 
 
 def run_dir(run_id: str) -> Path:
-    """Dossier des artefacts d'un run (créé à la demande)."""
-    return RUNS_DIR / run_id
+    """Dossier des artefacts d'un run, validé anti-traversal (reste sous `runs/`).
+
+    `run_id` peut venir de la CLI : on résout le chemin et on refuse tout ce qui
+    s'échapperait de `RUNS_DIR` (ex. `../…`), évitant une écriture/lecture hors zone (CWE-22).
+    """
+    candidate = (RUNS_DIR / run_id).resolve()
+    if not candidate.is_relative_to(RUNS_DIR.resolve()):
+        raise ValueError(f"run_id invalide (hors de runs/) : {run_id!r}")
+    return candidate
 
 
 # ----------------------------------------------------------------------------
@@ -152,14 +159,14 @@ def promote_to_baseline(run_id: str) -> list[Path]:
 # ----------------------------------------------------------------------------
 # CLI
 # ----------------------------------------------------------------------------
-def _cmd_list(_args) -> int:
+def _cmd_list(_args) -> None:
     reg = load_registry()
     current = reg.get("current")
     runs = reg.get("runs", [])
     print(f"Courant : {current or 'baseline (fichiers plats models/*)'}\n")
     if not runs:
         print("  (aucun run enregistré — seule la baseline est disponible)")
-        return 0
+        return
     print(f"  {'':1} {'run_id':<18} {'F1':>6} {'RMSE':>7}  créé")
     for r in runs:
         mark = "→" if r["run_id"] == current else " "
@@ -170,10 +177,9 @@ def _cmd_list(_args) -> int:
         f1s = f"{f1:.3f}" if isinstance(f1, (int, float)) else "  -  "
         rmses = f"{rmse:.2f}" if isinstance(rmse, (int, float)) else "  -  "
         print(f"  {mark} {r['run_id']:<18} {f1s:>6} {rmses:>7}  {r.get('created_at', '?')}")
-    return 0
 
 
-def _cmd_promote(args) -> int:
+def _cmd_promote(args) -> None:
     set_current(args.run_id)
     print(f"Run courant → {args.run_id}")
     if args.to_baseline:
@@ -181,13 +187,11 @@ def _cmd_promote(args) -> int:
         rels = ", ".join(p.name for p in copied)
         print(f"Copié sur la baseline committée : {rels}")
         print("→ commit ces fichiers pour mettre le modèle en production.")
-    return 0
 
 
-def _cmd_use_baseline(_args) -> int:
+def _cmd_use_baseline(_args) -> None:
     set_current(None)
     print("Run courant → baseline (fichiers plats models/*).")
-    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -210,7 +214,8 @@ def main(argv: list[str] | None = None) -> int:
     ).set_defaults(fn=_cmd_use_baseline)
 
     args = p.parse_args(argv)
-    return args.fn(args)
+    args.fn(args)
+    return 0
 
 
 if __name__ == "__main__":

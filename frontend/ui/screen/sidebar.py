@@ -15,14 +15,8 @@ DEMO_CSV = ROOT / "assets" / "KaggleDataset" / "mecha_test_classification.csv"
 DEFAULT_API = os.environ.get("MECHA_API_URL", "http://localhost:8000")
 
 
-def render() -> tuple[ApiClient, pd.DataFrame | None, int]:
-    st.sidebar.title("MECHA")
-    st.sidebar.caption("Maintenance prédictive / supervision du parc")
-
-    api_url = st.sidebar.text_input("URL de l'API", value=DEFAULT_API)
-    client = ApiClient(api_url)
-
-    # État de santé du backend
+def _render_health(client: ApiClient) -> None:
+    """Bandeau d'état du backend (OK / modèles non chargés / injoignable)."""
     try:
         h = client.health()
         if h.get("models_loaded"):
@@ -32,21 +26,34 @@ def render() -> tuple[ApiClient, pd.DataFrame | None, int]:
     except requests.RequestException:
         st.sidebar.error("API injoignable. Démarrez le backend puis rechargez.")
 
+
+def _load_source_df() -> pd.DataFrame | None:
+    """Sélecteur de source (jeu de démo ou CSV importé) -> DataFrame ou None."""
     st.sidebar.divider()
     st.sidebar.subheader("Source de données")
     src = st.sidebar.radio("Cycles machines", ["Jeu de démonstration", "Importer un CSV"], index=0)
 
-    df: pd.DataFrame | None = None
     if src == "Jeu de démonstration":
         if DEMO_CSV.exists():
             df = pd.read_csv(DEMO_CSV)
             st.sidebar.caption(f"{DEMO_CSV.name} · {df['machine_id'].nunique()} machines")
-        else:
-            st.sidebar.error(f"Fichier de démo introuvable : {DEMO_CSV}")
-    else:
-        up = st.sidebar.file_uploader("CSV (machine_id, cycle, + variables capteurs)", type="csv")
-        if up is not None:
-            df = pd.read_csv(up)
+            return df
+        st.sidebar.error(f"Fichier de démo introuvable : {DEMO_CSV}")
+        return None
+
+    up = st.sidebar.file_uploader("CSV (machine_id, cycle, + variables capteurs)", type="csv")
+    return pd.read_csv(up) if up is not None else None
+
+
+def render() -> tuple[ApiClient, pd.DataFrame | None, int]:
+    st.sidebar.title("MECHA")
+    st.sidebar.caption("Maintenance prédictive / supervision du parc")
+
+    api_url = st.sidebar.text_input("URL de l'API", value=DEFAULT_API)
+    client = ApiClient(api_url)
+    _render_health(client)
+
+    df = _load_source_df()
 
     n_max = 40
     if df is not None:

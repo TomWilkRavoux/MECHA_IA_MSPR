@@ -42,6 +42,10 @@ def load_lstm(filename: str, device: str | None = None) -> tuple[LSTMNet, str]:
 
     device = device or ("cuda" if torch.cuda.is_available() else "cpu")
     model = LSTMNet().to(device)
-    model.load_state_dict(torch.load(registry.resolve(filename), map_location=device))
+    # weights_only=True : ne désérialise QUE des tenseurs (pas de pickle arbitraire),
+    # protège contre l'exécution de code via un checkpoint malveillant (CWE-502).
+    model.load_state_dict(
+        torch.load(registry.resolve(filename), map_location=device, weights_only=True)
+    )
     model.eval()
     return model, device

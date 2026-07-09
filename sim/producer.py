@@ -25,6 +25,7 @@ import os
 import time
 from datetime import UTC, datetime
 from pathlib import Path
+from urllib.parse import urlparse
 
 import pandas as pd
 import requests
@@ -45,6 +46,17 @@ ALERT_COLS = [
     "risk_probability",
     "rul_predicted",
 ]
+
+
+# ----------------------------------------------------------------------------
+# Validation des entrées CLI (anti-SSRF / anti-traversal)
+# ----------------------------------------------------------------------------
+def _validate_api_url(url: str) -> str:
+    """Valide l'URL de l'API avant tout appel réseau : schéma http(s) + hôte (anti-SSRF)."""
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https") or not parsed.netloc:
+        raise SystemExit(f"URL d'API invalide : {url!r} (attendu http(s)://hôte[:port]).")
+    return url.rstrip("/")
 
 
 # ----------------------------------------------------------------------------
@@ -103,6 +115,48 @@ def _wait_backend(api_url: str, retries: int = 10) -> None:
     raise SystemExit(f"Backend injoignable/non prêt sur {api_url} (démarrer l'API d'abord).")
 
 
+_ALERT_ORDER = {"ok": 0, "warning": 1, "critical": 2}
+
+
+def _build_batch(tick: int, ids: list[str], frames: dict[str, pd.DataFrame]):
+    """Lot `/predict/batch` du tick courant + liste des machines encore actives."""
+    batch, active = [], []
+    for mid in ids:
+        if tick <= len(frames[mid]):
+            rows = history_upto(frames[mid], tick)
+            batch.append(build_request(mid, rows, FEATURES))
+            active.append(mid)
+    return batch, active
+
+
+def _log_alert_rises(active, results, meta, last_level, writer, fh, tick):
+    """Compte les niveaux et journalise les MONTÉES d'alerte. Retourne (counts, n_journalisées)."""
+    counts = {"ok": 0, "warning": 0, "critical": 0}
+    logged = 0
+    for mid in active:
+        res = results[mid]
+        lvl = res["alert_level"]
+        counts[lvl] = counts.get(lvl, 0) + 1
+        # Journalise à la MONTÉE d'alerte (ok->warning/critical ou warning->critical).
+        if _ALERT_ORDER[lvl] > _ALERT_ORDER[last_level.get(mid, "ok")]:
+            writer.writerow(
+                {
+                    "timestamp": datetime.now(UTC).isoformat(timespec="seconds"),
+                    "tick": tick,
+                    "machine_id": mid,
+                    "usine": meta[mid].get("usine", ""),
+                    "ligne_production": meta[mid].get("ligne_production", ""),
+                    "alert_level": lvl,
+                    "risk_probability": res["risk_probability"],
+                    "rul_predicted": res["rul_predicted"],
+                }
+            )
+            fh.flush()
+            logged += 1
+        last_level[mid] = lvl
+    return counts, logged
+
+
 def run(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="Flux temps réel simulé -> API MECHA.")
     p.add_argument("--api-url", default=os.getenv("MECHA_API_URL", "http://localhost:8000"))
@@ -113,6 +167,7 @@ def run(argv: list[str] | None = None) -> int:
     p.add_argument("--max-ticks", type=int, default=None, help="Arrêt après N cycles.")
     p.add_argument("--out", type=Path, default=DEFAULT_OUT)
     args = p.parse_args(argv)
+    api_url = _validate_api_url(args.api_url)
 
     if not args.csv.exists():
         raise SystemExit(f"CSV introuvable : {args.csv}")
@@ -127,7 +182,7 @@ def run(argv: list[str] | None = None) -> int:
     if args.max_ticks:
         horizon = min(horizon, args.max_ticks)
 
-    _wait_backend(args.api_url)
+    _wait_backend(api_url)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     new_file = not args.out.exists()
     fh = args.out.open("a", newline="")
@@ -142,44 +197,16 @@ def run(argv: list[str] | None = None) -> int:
     n_alerts = 0
     try:
         for tick in range(1, horizon + 1):
-            batch = []
-            active = []
-            for mid in ids:
-                if tick <= len(frames[mid]):
-                    rows = history_upto(frames[mid], tick)
-                    batch.append(build_request(mid, rows, FEATURES))
-                    active.append(mid)
+            batch, active = _build_batch(tick, ids, frames)
             if not batch:
                 break
 
-            r = requests.post(f"{args.api_url}/predict/batch", json={"machines": batch}, timeout=30)
+            r = requests.post(f"{api_url}/predict/batch", json={"machines": batch}, timeout=30)
             r.raise_for_status()
             results = {res["machine_id"]: res for res in r.json()["results"]}
 
-            counts = {"ok": 0, "warning": 0, "critical": 0}
-            for mid in active:
-                res = results[mid]
-                lvl = res["alert_level"]
-                counts[lvl] = counts.get(lvl, 0) + 1
-                # Journalise à la MONTÉE d'alerte (ok->warning/critical ou warning->critical).
-                prev = last_level.get(mid, "ok")
-                order = {"ok": 0, "warning": 1, "critical": 2}
-                if order[lvl] > order[prev]:
-                    writer.writerow(
-                        {
-                            "timestamp": datetime.now(UTC).isoformat(timespec="seconds"),
-                            "tick": tick,
-                            "machine_id": mid,
-                            "usine": meta[mid].get("usine", ""),
-                            "ligne_production": meta[mid].get("ligne_production", ""),
-                            "alert_level": lvl,
-                            "risk_probability": res["risk_probability"],
-                            "rul_predicted": res["rul_predicted"],
-                        }
-                    )
-                    fh.flush()
-                    n_alerts += 1
-                last_level[mid] = lvl
+            counts, logged = _log_alert_rises(active, results, meta, last_level, writer, fh, tick)
+            n_alerts += logged
 
             crit = [m for m in active if results[m]["alert_level"] == "critical"]
             line = (

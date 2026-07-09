@@ -13,6 +13,7 @@ _LABEL_FG = {STATUS_LABEL[k]: STATUS_PILL[k][1] for k in STATUS_LABEL}
 
 # Libellé de la colonne « proba de risque » (réutilisé tooltip / tableau).
 _PROBA_LABEL = "Proba risque"
+_RUL_Q = "rul_predicted:Q"
 
 
 def _render_kpis(res: pd.DataFrame) -> None:
@@ -33,7 +34,7 @@ def _render_urgency_chart(res: pd.DataFrame) -> None:
     base = alt.Chart(top)
     bars = base.mark_bar(cornerRadius=4, height=alt.RelativeBandSize(0.7)).encode(
         y=alt.Y("Machine:N", sort=top["Machine"].tolist(), title=None),
-        x=alt.X("rul_predicted:Q", title="RUL estimé (cycles)"),
+        x=alt.X(_RUL_Q, title="RUL estimé (cycles)"),
         color=alt.Color(
             "alert_level:N",
             scale=alt.Scale(domain=ALERT_ORDER, range=[STATUS_COLOR[a] for a in ALERT_ORDER]),
@@ -41,15 +42,15 @@ def _render_urgency_chart(res: pd.DataFrame) -> None:
         ),
         tooltip=[
             alt.Tooltip("machine_id:N", title="Machine"),
-            alt.Tooltip("rul_predicted:Q", title="RUL", format=".1f"),
+            alt.Tooltip(_RUL_Q, title="RUL", format=".1f"),
             alt.Tooltip("risk_probability:Q", title=_PROBA_LABEL, format=".2f"),
             alt.Tooltip("badge:N", title="Alerte"),
         ],
     )
     labels = base.mark_text(align="left", dx=4, color="#555").encode(
         y=alt.Y("Machine:N", sort=top["Machine"].tolist()),
-        x="rul_predicted:Q",
-        text=alt.Text("rul_predicted:Q", format=".0f"),
+        x=_RUL_Q,
+        text=alt.Text(_RUL_Q, format=".0f"),
     )
     st.altair_chart(
         (bars + labels).properties(height=max(240, 26 * len(top))), use_container_width=True

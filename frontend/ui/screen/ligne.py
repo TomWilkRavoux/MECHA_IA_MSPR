@@ -8,6 +8,9 @@ import streamlit as st
 
 from ..style.theme import ALERT_ORDER, STATUS_COLOR
 
+_RUL_MEAN = "RUL moyen"
+_RUL_MIN = "RUL min"
+
 
 def render(res: pd.DataFrame) -> None:
     """Vue agrégée par ligne de production (et usine) : où concentrer la maintenance."""
@@ -57,17 +60,17 @@ def render(res: pd.DataFrame) -> None:
             "critical": "Critiques",
             "warning": "À surveiller",
             "ok": "Normales",
-            "mean": "RUL moyen",
-            "min": "RUL min",
+            "mean": _RUL_MEAN,
+            "min": _RUL_MIN,
         }
     )
-    cols = ["Ligne", "Critiques", "À surveiller", "Normales", "RUL moyen", "RUL min"]
+    cols = ["Ligne", "Critiques", "À surveiller", "Normales", _RUL_MEAN, _RUL_MIN]
     st.dataframe(
         view[cols],
         use_container_width=True,
         hide_index=True,
         column_config={
-            "RUL moyen": st.column_config.NumberColumn(format="%.0f"),
-            "RUL min": st.column_config.NumberColumn(format="%.0f"),
+            _RUL_MEAN: st.column_config.NumberColumn(format="%.0f"),
+            _RUL_MIN: st.column_config.NumberColumn(format="%.0f"),
         },
     )
