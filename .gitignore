@@ -14,8 +14,6 @@ assets/
 # Sorties générées par le simulateur de flux (sim/producer.py)
 output/
 
-docker-compose.prod.yml
-
 #Model
 *joblib
 *.pt
