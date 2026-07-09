@@ -1,0 +1,201 @@
+# Déploiement PRODUCTION de la solution MECHA sur un VPS.
+#
+# Différences avec docker-compose.yml (dev) :
+#   - Traefik en frontal (80/443) : HTTPS Let's Encrypt automatique + redirection HTTP→HTTPS.
+#   - Dashboard PUBLIC (https://$DOMAIN) + Grafana (https://grafana.$DOMAIN), protégés par auth.
+#   - L'API FastAPI reste sur le réseau Docker INTERNE (aucun port publié, non routable
+#     depuis Internet) : le frontend l'appelle en privé via http://backend:8000.
+#   - Backend borné en CPU/threads (LSTM PyTorch) pour laisser des cœurs au monitoring.
+#   - Stack observabilité (Prometheus + cAdvisor + node-exporter) 100 % INTERNE.
+#   - restart: unless-stopped partout (survit à un reboot du VPS).
+#
+# Prérequis & procédure complète : docs/06-deploiement/deploiement_vps.md
+# Lancement :
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+
+services:
+  # --- Reverse proxy + terminaison TLS -------------------------------------
+  traefik:
+    image: traefik:v3.6.1
+    restart: unless-stopped
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=mecha_web"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--certificatesresolvers.le.acme.email=${ACME_EMAIL}"
+      - "--certificatesresolvers.le.acme.storage=/letsencrypt/acme.json"
+      - "--certificatesresolvers.le.acme.httpchallenge=true"
+      - "--certificatesresolvers.le.acme.httpchallenge.entrypoint=web"
+      - "--api.dashboard=false"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "letsencrypt:/letsencrypt"
+    networks:
+      - web
+
+  # --- API d'inférence (INTERNE, non exposée) ------------------------------
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    image: mecha-backend
+    restart: unless-stopped
+    expose:
+      - "8000"
+    environment:
+      # Plafond de threads PyTorch : sans ça, torch voit les 6 vCores de l'HÔTE
+      # et sature tout à chaque forward LSTM. Doit être posé AVANT l'import torch,
+      # d'où l'env conteneur (complété par torch.set_num_threads() côté code).
+      TORCH_NUM_THREADS: "3"
+      OMP_NUM_THREADS: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: "3.0"      # 3 vCores max sur 6 -> il en reste 3 pour le monitoring
+          memory: 2g       # garde-fou RAM (artefacts ~300 Ko, torch CPU + FastAPI)
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - internal
+    labels:
+      - "traefik.enable=false"
+
+  # --- Dashboard d'exploitation (PUBLIC, derrière Traefik + basic-auth) -----
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    image: mecha-frontend
+    restart: unless-stopped
+    environment:
+      MECHA_API_URL: "http://backend:8000"
+    volumes:
+      - ./assets:/app/assets:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - web
+      - internal
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mecha.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.mecha.entrypoints=websecure"
+      - "traefik.http.routers.mecha.tls.certresolver=le"
+      - "traefik.http.routers.mecha.middlewares=mecha-auth"
+      - "traefik.http.middlewares.mecha-auth.basicauth.users=${BASIC_AUTH}"
+      - "traefik.http.services.mecha.loadbalancer.server.port=8501"
+
+  # --- Prometheus (INTERNE : collecte des métriques, aucun port publié) -----
+  prometheus:
+    image: prom/prometheus:v3.1.0
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=15d"   # borne le volume disque
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - internal
+    labels:
+      - "traefik.enable=false"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512m
+
+  # --- cAdvisor (INTERNE : CPU/RAM par CONTENEUR) --------------------------
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.52.1
+    restart: unless-stopped
+    privileged: true
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    devices:
+      - /dev/kmsg
+    networks:
+      - internal
+    labels:
+      - "traefik.enable=false"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256m
+
+  # --- node-exporter (INTERNE : métriques de l'HÔTE : CPU/RAM/disque/réseau) -
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    restart: unless-stopped
+    command:
+      - "--path.rootfs=/host"
+    pid: host
+    volumes:
+      - /:/host:ro,rslave
+    networks:
+      - internal
+    labels:
+      - "traefik.enable=false"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.3"
+          memory: 128m
+
+  # --- Grafana (PUBLIC : seul composant monitoring exposé, TLS + auth) ------
+  grafana:
+    image: grafana/grafana:11.4.0
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: "${GRAFANA_ADMIN_PASSWORD}"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SERVER_ROOT_URL: "https://grafana.${DOMAIN}"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - web
+      - internal
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.grafana.rule=Host(`grafana.${DOMAIN}`)"
+      - "traefik.http.routers.grafana.entrypoints=websecure"
+      - "traefik.http.routers.grafana.tls.certresolver=le"
+      - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+      # Option : réutiliser le basic-auth Traefik en plus du login Grafana.
+      # - "traefik.http.routers.grafana.middlewares=mecha-auth"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512m
+
+networks:
+  web:
+    name: mecha_web
+  internal:
+    name: mecha_internal
+    internal: true
+
+volumes:
+  letsencrypt:
+  prometheus_data:
+  grafana_data:
