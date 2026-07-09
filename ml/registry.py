@@ -65,11 +65,61 @@ def run_dir(run_id: str) -> Path:
 # ----------------------------------------------------------------------------
 # Pointeur (registry.json)
 # ----------------------------------------------------------------------------
+# registry.json est modifiable à la main : tout ce qui en sort est ASSAINI avant
+# d'être réutilisé (identifiants reconstruits par allowlist de caractères,
+# métriques re-castées en float) — aucune donnée du fichier ne circule telle
+# quelle vers le disque (CWE-22/S2083).
+_ID_CHARS = frozenset("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-")
+_DATE_CHARS = frozenset("0123456789-:TZ+.")
+
+
+def _clean_id(value: object) -> str | None:
+    """Reconstruit un identifiant de run sûr (allowlist stricte de caractères)."""
+    if value is None:
+        return None
+    cleaned = "".join(c for c in str(value) if c in _ID_CHARS)
+    return cleaned or None
+
+
+def _clean_metrics(group: object) -> dict:
+    """Ne conserve que des paires nom (allowlist) -> valeur numérique."""
+    if not isinstance(group, dict):
+        return {}
+    return {
+        "".join(c for c in str(k) if c in _ID_CHARS): float(v)
+        for k, v in group.items()
+        if isinstance(v, (int, float)) and not isinstance(v, bool)
+    }
+
+
 def load_registry() -> dict:
-    """Lit le pointeur ; retourne un registre vide s'il n'existe pas encore."""
-    if REGISTRY_PATH.exists():
-        return json.loads(REGISTRY_PATH.read_text())
-    return {"current": None, "runs": []}
+    """Lit le pointeur ; retourne un registre vide s'il n'existe pas encore.
+
+    La structure retournée est entièrement reconstruite depuis des valeurs
+    validées : le contenu brut du fichier n'est jamais propagé.
+    """
+    if not REGISTRY_PATH.exists():
+        return {"current": None, "runs": []}
+    raw = json.loads(REGISTRY_PATH.read_text())
+    runs = []
+    for r in raw.get("runs", []):
+        if not isinstance(r, dict):
+            continue
+        rid = _clean_id(r.get("run_id"))
+        if rid is None:
+            continue
+        runs.append(
+            {
+                "run_id": rid,
+                "created_at": "".join(c for c in str(r.get("created_at", "")) if c in _DATE_CHARS),
+                "path": f"runs/{rid}",
+                "metrics": {
+                    "classification": _clean_metrics(r.get("metrics", {}).get("classification")),
+                    "regression": _clean_metrics(r.get("metrics", {}).get("regression")),
+                },
+            }
+        )
+    return {"current": _clean_id(raw.get("current")), "runs": runs}
 
 
 def _save_registry(reg: dict) -> None:
@@ -111,8 +161,13 @@ def current_run_id() -> str | None:
 
 
 def set_current(run_id: str | None) -> dict:
-    """Fixe le run courant. `None` rebascule sur la baseline plate."""
+    """Fixe le run courant. `None` rebascule sur la baseline plate.
+
+    `run_id` peut venir de la CLI : il est reconstruit par allowlist puis validé
+    par appartenance aux runs connus avant d'être persisté.
+    """
     reg = load_registry()
+    run_id = _clean_id(run_id)
     known = {r["run_id"] for r in reg.get("runs", [])}
     if run_id is not None and run_id not in known:
         raise ValueError(f"run inconnu : {run_id!r} (connus : {sorted(known) or 'aucun'})")

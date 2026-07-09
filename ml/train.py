@@ -170,13 +170,15 @@ def evaluate(clf: LSTMNet, reg: LSTMNet, scaler, device: str) -> dict:
 
 def write_metrics(result: dict, out_dir, *, mode: str, device: str, seed: int, epochs: int) -> None:
     """Journalise les métriques + métadonnées de run dans `out_dir/metrics.json`."""
+    # seed/epochs viennent de la CLI : le cast int() borne le contenu journalisé
+    # à des valeurs numériques (aucune chaîne externe n'est écrite sur disque).
     payload = {
         "generated_at": datetime.now(UTC).isoformat(timespec="seconds"),
         "mode": mode,
         "device": device,
         "python": platform.python_version(),
-        "seed": seed,
-        "epochs": epochs,
+        "seed": int(seed),
+        "epochs": int(epochs),
         "seq_len": prep.SEQ_LEN,
         "risk_threshold": prep.RISK_THRESHOLD,
         **result,
