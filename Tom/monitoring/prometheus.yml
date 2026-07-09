@@ -1,25 +1,27 @@
-# Configuration Prometheus pour la stack PRODUCTION (docker-compose.prod.yml).
-# Monté en lecture seule dans le conteneur prometheus. Tous les targets sont sur
-# le réseau Docker INTERNE (mecha_internal) : Prometheus les joint par leur nom
-# de service. Aucun endpoint applicatif à scraper (le backend FastAPI n'expose
-# que /health) : on collecte l'infra (conteneurs + hôte).
-
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
 
 scrape_configs:
-  # Prometheus s'auto-supervise.
-  - job_name: prometheus
-    static_configs:
-      - targets: ["localhost:9090"]
-
-  # Métriques PAR CONTENEUR (CPU, RAM, I/O) via cAdvisor.
+# Métriques par conteneur (CPU/RAM de backend, frontend, traefik...)
   - job_name: cadvisor
     static_configs:
       - targets: ["cadvisor:8080"]
 
-  # Métriques de l'HÔTE (CPU, RAM, disque, réseau) via node-exporter.
-  - job_name: node-exporter
+  # Métriques de l'hôte (CPU/RAM/disque/réseau du VPS)
+  - job_name: node
     static_configs:
-      - targets: ["node-exporter:9100"]
+    - targets: ["node-exporter:9100"]
+
+  # Prometheus se surveille lui-même
+  - job_name: prometheus
+    static_configs:
+    - targets: ["localhost:9090"]
+
+# (Optionnel) métriques applicatives du backend FastAPI.
+# À activer seulement si tu ajoutes prometheus-fastapi-instrumentator
+# (expose /metrics) dans le backend :
+# - job_name: backend
+#   metrics_path: /metrics
+#   static_configs:
+#     - targets: ["backend:8000"]
