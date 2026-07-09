@@ -1,4 +1,29 @@
 .env
+.env.prod
 .venv/
 __marimo__/
+__pycache__/
+.claude/
+.pytest_cache/
+
+reports/
 assets/
+*.pdf
+
+# Sorties générées par le simulateur de flux (sim/producer.py)
+output/
+
+#Model
+*joblib
+*.pt
+
+# ...sauf les 3 artefacts LSTM légers (~300 Ko) : nécessaires aux tests d'inférence
+# en CI et à l'exécution du backend conteneurisé (scaler + 2 têtes du modèle retenu).
+!models/scaler.joblib
+!models/lstm_classifier.pt
+!models/lstm_regressor.pt
+
+# Registre MLOps local : runs versionnés + pointeur. La baseline plate ci-dessus
+# reste le contrat committé ; promouvoir en prod = copier un run dessus (--to-baseline).
+models/runs/
+models/registry.json

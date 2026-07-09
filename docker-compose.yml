@@ -1,0 +1,48 @@
+# Orchestration de la solution de maintenance prédictive MECHA.
+#   backend  : API FastAPI exposant le LSTM (classif at_risk + régression RUL)
+#   frontend : dashboard Streamlit consommant l'API
+#
+# Lancement (depuis la racine) :
+#   docker compose up --build
+#   → API   http://localhost:8000/docs
+#   → Dashboard http://localhost:8501
+
+services:
+  backend:
+    environment:
+      TORCH_NUM_THREADS: "3"
+      OMP_NUM_THREADS: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: "3.0"
+          memory: 2g
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    image: mecha-backend
+    ports:
+      - "8000:8000"
+    # Image auto-portée : les 3 artefacts d'inférence sont embarqués (aucun volume requis).
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    image: mecha-frontend
+    ports:
+      - "8501:8501"
+    environment:
+      MECHA_API_URL: "http://backend:8000"
+    # Jeu de démonstration monté depuis l'hôte (non versionné)
+    volumes:
+      - ./assets:/app/assets:ro
+    depends_on:
+      backend:
+        condition: service_healthy
