@@ -26,6 +26,12 @@ PARK_HINT = (
     "Cliquez sur **Analyser le parc** pour lancer les prédictions sur l'ensemble sélectionné."
 )
 
+# Écrans du dashboard. On navigue à écran unique (un seul rendu par rerun) plutôt
+# qu'avec `st.tabs` : les onglets rendent TOUT leur contenu à chaque run et laissent
+# le navigateur masquer/afficher en CSS, ce qui, sous latence (API lente en prod),
+# fait « fuiter » le contenu d'un onglet dans l'onglet affiché (bleed de deltas).
+SCREENS = ["Vue parc", "Par ligne", "Fiche machine", "Analyse unitaire"]
+
 
 def main() -> None:
     css.apply()
@@ -47,28 +53,26 @@ def main() -> None:
             except requests.RequestException as exc:
                 st.error(f"Échec de l'appel à l'API : {exc}")
 
-    tab_parc, tab_ligne, tab_machine, tab_unit = st.tabs(
-        ["Vue parc", "Par ligne", "Fiche machine", "Analyse unitaire"]
+    screen = (
+        st.segmented_control(
+            "Navigation", SCREENS, default=SCREENS[0], key="nav", label_visibility="collapsed"
+        )
+        or SCREENS[0]  # `None` quand l'utilisateur déselectionne : on retombe sur la vue parc
     )
     res = st.session_state.get("res")
 
-    with tab_parc:
-        if res is None:
-            st.info(PARK_HINT)
-        else:
-            parc.render(res)
-    with tab_ligne:
-        if res is None:
-            st.info(PARK_HINT)
-        else:
-            ligne.render(res)
-    with tab_machine:
-        if res is None:
-            st.info(PARK_HINT)
-        else:
-            machine.render(client, res, st.session_state["df"], thr)
-    with tab_unit:
+    # Rendu à écran unique : seul l'écran sélectionné existe dans l'arbre à ce rerun.
+    if screen == "Analyse unitaire":
+        # Ne dépend pas de l'analyse du parc : prédiction à la demande via /predict.
         unitaire.render(client, df, thr)
+    elif res is None:
+        st.info(PARK_HINT)
+    elif screen == "Vue parc":
+        parc.render(res)
+    elif screen == "Par ligne":
+        ligne.render(res)
+    elif screen == "Fiche machine":
+        machine.render(client, res, st.session_state["df"], thr)
 
 
 main()

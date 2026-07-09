@@ -39,6 +39,10 @@ h2, h3 {font-weight: 600;}
 [data-baseweb="tab-list"] {gap: 2px; border-bottom: 1px solid #e4e2da;}
 [data-baseweb="tab"] {font-weight: 500; padding-left: 14px; padding-right: 14px;}
 
+/* --- Navigation principale (segmented_control présenté comme une barre d'onglets) --- */
+[data-testid="stSegmentedControl"] {margin-bottom: 0.8rem;}
+[data-testid="stSegmentedControl"] button {font-weight: 500; padding: 6px 16px;}
+
 /* --- Boutons & tableaux --- */
 .stButton > button {border-radius: 8px; font-weight: 600;}
 [data-testid="stDataFrame"] {border: 1px solid rgba(18, 16, 12, 0.08); border-radius: 10px;}
