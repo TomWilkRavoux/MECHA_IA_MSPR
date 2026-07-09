@@ -71,11 +71,11 @@ jobs:
             ./gitleaks detect --source . --no-banner --redact --verbose
 
   # Lint + import-sorting (Ruff). Autonome : pas besoin d'installer les dépendances
-  # du projet, `uvx` récupère Ruff à la volée. Config dans Tom/pyproject.toml.
+  # du projet, `uvx` récupère Ruff à la volée. Config dans pyproject.toml.
   lint:
     docker:
       - image: cimg/python:3.12
-    working_directory: ~/project/Tom
+    working_directory: ~/project
     steps:
       - checkout:
           path: ~/project
@@ -84,14 +84,14 @@ jobs:
           name: Ruff (lint)
           command: uvx ruff check .
 
-  # Tests de la partie IA (Tom/) : contrat d'API, unitaires, dictionnaire de données.
+  # Tests de la partie IA (racine) : contrat d'API, unitaires, dictionnaire de données.
   # Dépendances reproduites depuis le lockfile (uv.lock) — variante torch CPU via
   # l'extra `cpu`. Les modèles d'inférence sont committés (models/*.pt, scaler.joblib),
   # donc les tests marqués @needs_models s'exécutent réellement ici.
   test-ia:
     docker:
       - image: cimg/python:3.12
-    working_directory: ~/project/Tom
+    working_directory: ~/project
     steps:
       - checkout:
           path: ~/project
@@ -113,7 +113,7 @@ jobs:
       - persist_to_workspace:
           root: ~/project
           paths:
-            - Tom/coverage.xml
+            - coverage.xml
 
   # Gate qualité modèle (MLOps) : refuse un modèle dont les performances régressent
   # sous le contrat (ml/metrics_thresholds.json). Lit le rapport committé
@@ -121,7 +121,7 @@ jobs:
   validate-model:
     docker:
       - image: cimg/python:3.12
-    working_directory: ~/project/Tom
+    working_directory: ~/project
     steps:
       - checkout:
           path: ~/project
@@ -137,7 +137,7 @@ jobs:
   deps-audit:
     docker:
       - image: cimg/python:3.12
-    working_directory: ~/project/Tom
+    working_directory: ~/project
     steps:
       - checkout:
           path: ~/project
@@ -153,7 +153,7 @@ jobs:
   build-images:
     machine:
       image: ubuntu-2404:current
-    working_directory: ~/project/Tom
+    working_directory: ~/project
     steps:
       - checkout:
           path: ~/project
@@ -166,7 +166,7 @@ jobs:
   e2e:
     machine:
       image: ubuntu-2404:current
-    working_directory: ~/project/Tom
+    working_directory: ~/project
     steps:
       - checkout:
           path: ~/project
@@ -190,12 +190,12 @@ jobs:
 
   # Analyse qualité SonarCloud (bugs, code smells, duplication, maintenabilité) +
   # couverture (coverage.xml produit par test-ia, récupéré via le workspace).
-  # Config : Tom/sonar-project.properties. Requiert la variable SONAR_TOKEN (SonarCloud).
+  # Config : sonar-project.properties. Requiert la variable SONAR_TOKEN (SonarCloud).
   # Garde : si le token n'est pas encore configuré, le job s'ignore sans casser la CI.
   sonarcloud:
     docker:
       - image: cimg/python:3.12
-    working_directory: ~/project/Tom
+    working_directory: ~/project
     steps:
       - checkout:
           path: ~/project
