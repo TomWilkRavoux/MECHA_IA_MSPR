@@ -131,8 +131,9 @@ jobs:
 
   # Scan des vulnérabilités connues des dépendances (pip-audit), en complément de
   # gitleaks (secrets). On audite l'environnement installé (torch, absent de PyPI,
-  # est ignoré proprement). NON BLOQUANT au départ : une CVE transitive non
-  # corrigeable ne doit pas casser la CI — à durcir une fois le socle assaini.
+  # est ignoré proprement).
+  # BLOQUANT : toute CVE connue casse la CI. Les versions transitives corrigées sont contraintes dans pyproject.toml ([tool.uv]
+  # constraint-dependencies) ; une CVE non corrigeable se traite via --ignore-vuln.
   deps-audit:
     docker:
       - image: cimg/python:3.12
@@ -145,8 +146,8 @@ jobs:
           name: Installer l'environnement (sans torch, non audité)
           command: uv sync --frozen --extra cpu --no-install-package torch
       - run:
-          name: pip-audit (non bloquant)
-          command: uv run --with pip-audit pip-audit || echo "Vulnérabilités détectées (non bloquant pour l'instant)."
+          name: pip-audit (bloquant)
+          command: uv run --with pip-audit pip-audit
 
   # Valide que les images se construisent (conteneurisation, CDC §8.1).
   build-images:

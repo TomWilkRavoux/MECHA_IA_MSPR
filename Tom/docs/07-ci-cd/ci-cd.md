@@ -50,7 +50,7 @@ L'**orchestration** repose sur les dépendances `requires:` :
 | `lint` | `cimg/python:3.12` | **Ruff** (`ruff check`) : erreurs de code, imports inutilisés/mal triés, modernisation (`pyupgrade`), bugs probables (`flake8-bugbear`). | ✅ |
 | `test-ia` | `cimg/python:3.12` | Installe les deps depuis le **lockfile** (`uv sync --extra cpu`) et lance **pytest** (contrat d'API, unitaires, dictionnaire de données) avec couverture. | ✅ |
 | `validate-model` | `cimg/python:3.12` | **Gate qualité modèle** : `ml/validate_metrics.py` refuse un modèle régressant sous `ml/metrics_thresholds.json`. Stdlib seule, aucune donnée. Détail dans [`mlops.md`](../04-mlops/mlops.md) §3. | ✅ |
-| `deps-audit` | `cimg/python:3.12` | **pip-audit** : vulnérabilités connues (CVE) des dépendances, en complément de gitleaks. | ⚠️ non bloquant (voir §5) |
+| `deps-audit` | `cimg/python:3.12` | **pip-audit** : vulnérabilités connues (CVE) des dépendances, en complément de gitleaks. | ✅ (voir §5) |
 | `build-images` | `machine` (Docker) | `docker compose build` : valide que les images backend & frontend se construisent (conteneurisation, CDC §8.1). | ✅ |
 | `e2e` | `machine` (Docker) | Démarre l'API **dans son conteneur** (modèles LSTM embarqués) et vérifie une prédiction **de bout en bout par HTTP** (`tests/test_e2e.py`). | ✅ |
 | `sonarcloud` | `cimg/python:3.12` | **SonarCloud** : analyse statique (bugs, code smells, duplication, maintenabilité) + **couverture** (`coverage.xml` de `test-ia`). En fin de chaîne. | ⚠️ garde sur `SONAR_TOKEN` (voir §5.1) |
@@ -147,10 +147,12 @@ git push origin v1.0.0     # → CircleCI lance le workflow cd (build des images
 
 - **Deux angles de sécurité** : `scan-secrets` (gitleaks, secrets dans le code) **et**
   `deps-audit` (pip-audit, CVE des dépendances) — deux risques distincts du cours.
-- **`deps-audit` volontairement non bloquant** au départ : une CVE dans une dépendance
-  *transitive* non corrigeable ne doit pas figer toute la CI. Il **signale** sans casser ;
-  on le durcira (retrait du `|| …`) une fois les transitifs assainis
-  (`uv lock --upgrade`).
+- **`deps-audit` bloquant** : toute CVE connue fait échouer la CI. Les transitifs
+  vulnérables (`urllib3`, `idna`, `setuptools`) sont maintenus à des versions corrigées
+  via un plancher de sécurité déclaré dans `pyproject.toml` (`[tool.uv]
+  constraint-dependencies`) — sans les ajouter comme dépendances directes. Si un jour
+  une CVE transitive **non corrigeable** apparaît, on l'exclut explicitement et de façon
+  traçable (`pip-audit --ignore-vuln PYSEC-XXXX-XX`) plutôt que de re-désactiver le gate.
 - **`lint` = `ruff check` seul** (pas `ruff format --check`) : le formatage automatique
   toucherait de nombreux fichiers et créerait des conflits avec les branches en cours.
   Le formatage reste disponible en local (`uvx ruff format`) et pourra devenir un gate
